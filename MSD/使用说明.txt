@@ -1,0 +1,6 @@
+0.需要POSCAR和XDATCAR文件
+1.需要安装python，默认的python命令是python，如果需要更改，请至msd_vasp.sh文件将"python python_msd.py"这一行更改
+2.需要numpy包 --> pip install numpy
+3.如果需要导出图片，需要matplotlib,pandas包 --> pip install pandas, pip install matplotlib
+并且需要在Linux中创建文件 ~/.config/matplotlib/matplotlibrc，（其中，~/.config/matplotlib/是配置文件matplotlibrc的路径）。在下面一行添加
+backend : Agg
