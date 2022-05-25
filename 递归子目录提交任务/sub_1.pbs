@@ -1,0 +1,31 @@
+#PBS -N temp
+#PBS -l nodes=1:ppn=40
+#PBS -q paraque2
+#PBS -V
+#PBS -o ./
+#PBS -e ./
+#PBS -S /bin/bash 
+
+#### Set intel environment###
+source /opt/intel/composer_xe_2015/bin/compilervars.sh intel64
+source /opt/intel/mkl/bin/intel64/mklvars_intel64.sh
+source /opt/intel/impi/5.0.2.044/bin64/mpivars.sh
+
+cd $PBS_O_WORKDIR
+NP=`cat $PBS_NODEFILE | wc -l`
+NN=`cat $PBS_NODEFILE | sort | uniq | tee /tmp/nodes.$$ | wc -l`
+cat $PBS_NODEFILE > /tmp/nodefile.$$
+
+#dirs="dir1 dir2"
+dirs=`ls`
+for i in ${dirs}
+do
+    if [ -d ${i} ];then
+        cd ${i}
+        mpirun -genv I_MPI_DEVICE ssm -machinefile /tmp/nodefile.$$ -n $NP /opt/issp2/vasp/vasp5.4.4_std
+        cd ..
+    fi
+done
+
+rm -rf /tmp/nodefile.$$
+rm -rf /tmp/nodes.$$

@@ -79,7 +79,7 @@ def main():
     # 导入文件
     constant = np.loadtxt("cons.csv") #晶格常数
     atoms_info = np.loadtxt("atoms_info.csv",dtype=str)  #原子种类信息
-    #init_pos_fra = np.loadtxt("init_pos.csv") #分数坐标的初始位置信息
+    init_pos_fra = np.loadtxt("init_pos.csv") #分数坐标的初始位置信息
     xdatcar_fra =  np.loadtxt("xdatcar.csv") #分数坐标的xdatcar位置信息
     steps,step_len =  np.loadtxt("step.csv")  #步数和步长
     
@@ -92,7 +92,7 @@ def main():
         for i in range(atoms_info.shape[1]):
             atoms_info_dict.setdefault(atoms_info[0,i],int(atoms_info[1,i]))
     else: atoms_info_dict.setdefault(atoms_info[0],int(atoms_info[1]))
-    #init_pos = fra2car(init_pos_fra,constant) #笛卡尔坐标的初始位置信息
+    init_pos = fra2car(init_pos_fra,constant) #笛卡尔坐标的初始位置信息
     xdatcar = np.vsplit(fra2car(xdatcar_fra,constant),steps)  #笛卡尔坐标的xdatcar位置信息
     init_pos = xdatcar[0]  #用xdatcar的第一步作为初始坐标，以防给定的第一步POSCAR不是第0步的坐标
 

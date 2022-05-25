@@ -4,10 +4,12 @@
 ##########设定固定数目##########
 fix_num=$1
 ####################
-if [ ${fix_num} == "" ];then
+if [[ ${fix_num} == "" ]];then
 	echo "请输入参数"
 	exit 1
 fi
+# 转换POSCAR为linux格式
+dos2unix POSCAR
 # 将POSCAR中的坐标放入list文件中
 sed -nr -e '/^Dir|^Car/,/^\s*$/p' POSCAR | sed -r '/^Dir|^Car|^\s*$/d' | awk '{print NR,$1,$2,$3}' |sort -t' ' -k4 > list
 # 将POSCAR中坐标前的文件单独存放
