@@ -1,6 +1,6 @@
-#PBS -N temp
-#PBS -l nodes=1:ppn=40
-#PBS -q paraque2
+#PBS -N TaskCircle
+#PBS -l nodes=1:ppn=28
+#PBS -q paraque
 #PBS -V
 #PBS -o ./
 #PBS -e ./
@@ -16,15 +16,17 @@ NP=`cat $PBS_NODEFILE | wc -l`
 NN=`cat $PBS_NODEFILE | sort | uniq | tee /tmp/nodes.$$ | wc -l`
 cat $PBS_NODEFILE > /tmp/nodefile.$$
 
-#dirs="dir1 dir2"
-dirs=`ls`
-for i in ${dirs}
+
+for ((dirname=1;dirname<=10;dirname++))
 do
-    if [ -d ${i} ];then
-        cd ${i}
-        mpirun -genv I_MPI_DEVICE ssm -machinefile /tmp/nodefile.$$ -n $NP /opt/issp2/vasp/vasp5.4.4_std
-        cd ..
-    fi
+    while test ! -d ${dirname}*
+    do
+        sleep 30s
+    done
+    cd ${dirname}*
+    mpirun -genv I_MPI_DEVICE ssm -machinefile /tmp/nodefile.$$ -n $NP /opt/issp2/vasp/vasp5.4.4_std
+    cd ..
+    echo "the task${dirname} is complete!" >> TaskLog
 done
 
 rm -rf /tmp/nodefile.$$

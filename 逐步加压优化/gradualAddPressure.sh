@@ -1,11 +1,4 @@
-#!/bin/bash
-#SBATCH -p v5_192
-#SBATCH -N 1
-#SBATCH -n 48
-source /public1/soft/modules/module.sh
-module load  mpi/intel/17.0.5-cjj
-export PATH=/public1/home/scfa1114/soft:$PATH
-
+# 设定压力
 pressure="20 40 60 80 100"
 current=0
 for pre in ${pressure}

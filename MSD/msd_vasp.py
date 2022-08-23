@@ -1,3 +1,15 @@
+"""
+0.需要POSCAR和XDATCAR文件（晶格常数从XDATCAR获取，由于 ISIF=2，晶胞不改变。用 XDATCAR 种的第一步作为初始结构）
+1.不需要 INCAR，因为步长是手动输入的
+2.需要安装python，默认的python命令是python，如果需要更改，请至msd_vasp.sh文件将"python python_msd.py"这一行更改
+3.需要numpy包 --> pip install numpy
+4.如果需要导出图片，需要matplotlib,pandas包 --> pip install pandas, pip install matplotlib
+并且需要在Linux中创建文件 ~/.config/matplotlib/matplotlibrc，（其中，~/.config/matplotlib/是配置文件matplotlibrc的路径）。在下面一行添加
+backend : Agg
+
+注意：
+只适用于计算立方格子的MSD
+"""
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -40,6 +52,7 @@ def calibration_pos(pos,cons,record):
     """根据周期性边界条件的表格校准位置"""
     for i in range(3): #3d
         pos[:,i] += record[:,i]*cons[i,i]
+    return pos
 
 def plot():
     #配置
@@ -77,39 +90,57 @@ def plot():
 
 def main():
     # 导入文件
-    constant = np.loadtxt("cons.csv") #晶格常数
-    atoms_info = np.loadtxt("atoms_info.csv",dtype=str)  #原子种类信息
-    #init_pos_fra = np.loadtxt("init_pos.csv") #分数坐标的初始位置信息
-    xdatcar_fra =  np.loadtxt("xdatcar.csv") #分数坐标的xdatcar位置信息
-    steps,step_len =  np.loadtxt("step.csv")  #步数和步长
+    constant = np.loadtxt("cons.csv",dtype='f8') #晶格常数 - 来自于 XDATCAR 的第一步的晶格常数，由于 MD 计算是固定胞的，所有结构胞都一样
     
-    # 提取信息
-    if len(atoms_info.shape) != 1:
-        atoms_num_total = atoms_info[1,:].astype('i2').sum()   #总的原子数量
-    else: atoms_num_total = atoms_info[1].astype('i2').sum()
+    atoms_info = np.loadtxt("atoms_info.csv",dtype=str)  #原子种类信息
+    #atoms_info = np.array(['N','192'])  # 模拟胞内只有一种原子的情况
+    
+    # 如果胞内只有一种原子，atoms_info就会如 ['N','192'] 这样的一维形式，把它换成二维 [['N'],['192']]
+    if atoms_info.ndim == 1:
+        atoms_info = atoms_info[:,None]
+        
+    atoms_num = sum([int(i) for i in atoms_info[1]])    # 一个晶胞内的原子数
+    
+    init_pos_fra = np.loadtxt("init_pos.csv") # 分数坐标的POSCAR位置坐标
+    xdatcar_fra =  np.loadtxt("xdatcar.csv") # 分数坐标的xdatcar位置坐标
+    steps,step_len =  np.loadtxt("step.csv")  #步数和步长，步长是用户输入的，步数是从XDATCAR 导入的
+    
+    # 将 分数坐标 转换为 笛卡尔坐标
+    init_pos = fra2car(init_pos_fra,constant)
+    xdatcar = np.vsplit(fra2car(xdatcar_fra,constant),steps)
+    init_pos = xdatcar[0] # 用xdatcar的第1步作为初始位置
+    
+    #print(constant)
+    #print(atoms_info)
+    #print(atoms_num)
+    #print(init_pos_fra)
+    #print(xdatcar_fra)
+    
+    # 设置原子信息字典
     atoms_info_dict={}  #字典中存放原子信息 eg {N:192,H:8}
-    if len(atoms_info.shape) != 1:
-        for i in range(atoms_info.shape[1]):
-            atoms_info_dict.setdefault(atoms_info[0,i],int(atoms_info[1,i]))
-    else: atoms_info_dict.setdefault(atoms_info[0],int(atoms_info[1]))
-    #init_pos = fra2car(init_pos_fra,constant) #笛卡尔坐标的初始位置信息
-    xdatcar = np.vsplit(fra2car(xdatcar_fra,constant),steps)  #笛卡尔坐标的xdatcar位置信息
-    init_pos = xdatcar[0]  #用xdatcar的第一步作为初始坐标，以防给定的第一步POSCAR不是第0步的坐标
-
+    for i in range(atoms_info.shape[1]):
+        atoms_info_dict.setdefault(atoms_info[0,i],int(atoms_info[1,i]))
+    
+    #print(atoms_info_dict)
+    
+    
     # 定义一些变量
     msd_list = ['time(fs)','MSD-total','MSD-x','MSD-y','MSD-z']  #创建msd输出文件的头行
     for i in atoms_info_dict.keys():
         msd_list.append('MSD-'+i)
-    over_boundary_record = np.zeros((atoms_num_total,3))  #记录原子超出边界的次数=\number\
-
-    #print(init_pos)
-    # 主体
+    #print(msd_list)
+    
+    over_boundary_record = np.zeros((atoms_num,3))  #记录原子超出边界的次数，纵坐标对应每个原子，横坐标使对应每个原子的 x,y,z 坐标，某个原子的某个轴超出边界，对应位置+1或者-1
+    #print(over_boundary_record)
+    
+    
+    # ------------ 信息导入和处理完毕，下面是主要部分 --------------
     for step in range(len(xdatcar)):
         pos = xdatcar[step]
         if step != 0:
             judge_period_atoms(xdatcar[step-1],pos,constant,over_boundary_record)
-        calibration_pos(pos,constant,over_boundary_record)
-        over_boundary_record = np.zeros((atoms_num_total,3)) #初始化
+        pos=calibration_pos(pos,constant,over_boundary_record)
+        over_boundary_record = np.zeros((atoms_num,3)) #初始化
         #print(step+1)
         #print(pos)
         #print(over_boundary_record)

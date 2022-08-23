@@ -1,5 +1,4 @@
-#!/bin/sh
-#lipai@mail.ustc.edu.cn
+#!/bin/env bash
 
 begin=$1
 if [ $begin =='' ]; then begin=0; fi    
@@ -41,6 +40,23 @@ set ylabel 'Force (eV/Angstrom)'
 plot 'force.conv' w l t "Force in eV/Angstrom"
 EOF
 
+if [ $steps -gt 100 ] ; then
+tail -100 force.conv >temp.fff_
+tail -100 temp.e >temp.ee_
+gnuplot <<EOF 
+set term dumb
+set title 'Energy of each ionic step for the tail 100 steps'
+set xlabel 'Ionic steps'
+set ylabel 'Energy(eV)'
+plot 'temp.ee_' u 1:5 w l  t "Energy in eV"
+set title 'Max Force of each ionic step for the tail 100 steps'
+set xlabel 'Ionic steps'
+set ylabel 'Force (eV/Angstrom)'
+plot 'temp.fff_' w l  t "Force in eV/Angstrom"
+EOF
+rm temp.fff_ temp.ee_
+fi
+
 if [ $steps -gt 8 ] ; then
 tail -5 force.conv >temp.fff
 tail -5 temp.e >temp.ee
@@ -58,4 +74,4 @@ EOF
 rm temp.fff temp.ee
 fi
 
-rm temp.e temp.f temp.ff temp.fix temp.fixx
+rm temp.e temp.f temp.ff temp.fix temp.fixx force.conv

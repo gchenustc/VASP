@@ -18,7 +18,7 @@ if test $3;then
     cp OUTCAR OUTCAR_${suffix}
 fi
 
-mv CONTCAR POSCAR
+cp CONTCAR POSCAR
 if test ${script}; then
     $subCmd ${script}
 fi
