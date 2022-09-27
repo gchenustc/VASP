@@ -44,7 +44,7 @@ class FixAtoms(object):
             head[3] = sep.join(map(str,self.const_arr[1].tolist())) + '\n'
             head[4] = sep.join(map(str,self.const_arr[2].tolist())) + '\n'
             head[6] = '    ' + ' '.join(self.atoms_info[1].tolist()) + '\n'  
-            head.append('Selective dynamics\n')
+            head.insert(7, 'Selective dynamics\n')
 
             # 写入
             with open(self.out_path,'w') as fw:
@@ -73,11 +73,11 @@ class FixAtoms(object):
 
         for index,each_atom_coor in enumerate(self.pos_arr):
             if index in fixed_index_list:
-                fixed_sign_list.append(['F','F','F'])
+                fixed_sign_list.append(['F','F','T'])
             else:
                 fixed_sign_list.append(['T','T','T'])
         self.pos_arr = np.c_[self.pos_arr,np.array(fixed_sign_list,dtype="object")]
 
 if __name__=="__main__":
-    fix_ = FixAtoms(input_path = 'POSCAR', out_path='POSCAR_out', axis='z', n_fixed=100)
+    fix_ = FixAtoms(input_path = 'POSCAR', out_path='POSCAR_out', axis='z', n_fixed=16)
     fix_.retPoscar()

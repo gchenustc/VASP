@@ -1,4 +1,5 @@
 #!/bin/env bash
+# 打印vasp计算过程中的力和能量收敛变化
 
 begin=$1
 if [ $begin =='' ]; then begin=0; fi    
