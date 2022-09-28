@@ -1,6 +1,6 @@
 """
 作用：
-main('POSCAR',x) 指的是分别沿着对z轴方向进行中心对称
+main('POSCAR','z') 指的是分别沿着对z轴方向进行中心对称
 注意：
 只支持 vasp 的POSCAR 格式
 且POSCAR是笛卡尔坐标
