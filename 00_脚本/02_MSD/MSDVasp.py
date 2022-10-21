@@ -1,11 +1,10 @@
 """
 0.需要POSCAR和XDATCAR文件（晶格常数从XDATCAR获取，由于 ISIF=2，晶胞不改变。用 XDATCAR 种的第一步作为初始结构）
 1.不需要 INCAR，因为步长是手动输入的
-2.需要安装python，默认的python命令是python，如果需要更改，请至msd_vasp.sh文件将"python python_msd.py"这一行更改
+2.需要安装python
 3.需要numpy包 --> pip install numpy
 4.如果需要导出图片，需要matplotlib,pandas包 --> pip install pandas, pip install matplotlib
-并且需要在Linux中创建文件 ~/.config/matplotlib/matplotlibrc，（其中，~/.config/matplotlib/是配置文件matplotlibrc的路径）。在下面一行添加
-backend : Agg
+并且需要在Linux中创建文件 ~/.config/matplotlib/matplotlibrc，在下面一行添加 backend : Agg
 
 注意：
 只适用于计算立方格子的MSD

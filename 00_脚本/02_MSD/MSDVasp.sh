@@ -15,14 +15,14 @@ sed -n '/Direct/,$p' POSCAR| grep -v 'Direct' | tr -s ' ' | sed 's/.//' > init_p
 sed -n '6,7p' POSCAR |tr -s ' '| sed 's/.//' > atoms_info.csv
 
 #提取XDATCAR的位置信息>xdatcar
-awk 'NR>7' XDATCAR | grep -v 'Direct' | tr -s ' ' |sed 's/.//' > xdatcar.csv
+awk 'NR>7' XDATCAR | sed -nr '/Direct/,/[\s]/p' | grep -v 'Direct' |grep -Pv '[a-z]' > xdatcar.csv
 
 #获得步数和步长>xdatcar
 grep 'Direct' XDATCAR|wc -l > step.csv
-read -p "输入步长" len
+read -p "输入分子动力学步长:(unit: fs):" len
 echo $len >> step.csv
 
-python msd_vasp.py
+python MSDVasp.py
 rm cons.csv
 rm init_pos.csv
 rm atoms_info.csv
