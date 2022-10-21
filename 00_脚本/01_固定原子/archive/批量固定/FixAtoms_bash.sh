@@ -9,7 +9,7 @@ do
 if [ -d ${i} ];then
 cd ${i}
 # 将POSCAR中的坐标放入list文件中
-sed -nr -e '/^Dir|^Car/,/^\s*$/p' POSCAR | sed -r '/^Dir|^Car|^\s*$/d' | awk '{print NR,$1,$2,$3}' |sort -t' ' -k4 > list
+sed -nr -e '/^Dir|^Car/,/^\s*$/p' POSCAR | sed -r '/^Dir|^Car|^\s*$/d' | awk '{print NR,$1,$2,$3}' |sort -n -t' ' -k4 > list
 # 将POSCAR中坐标前的文件单独存放
 sed -r '/Dir|Car/iSelective Dynamics' POSCAR | awk 'NR==1,/Dir|Car/{print $0}' > POSCAR_HEAD
 count=1
