@@ -4,6 +4,7 @@
 ---
 
 # 使用教程
+## 功能性脚本
 1. Fixatoms.sh  
 - 描述：按照沿着z轴的顺序从底部开始固定胞原子  
 - 环境: Shell 
@@ -47,6 +48,25 @@ chmod u+x MSDVasp.sh
 # 3.
 ./MSDVasp.sh
 ```
+---
+
+4. chgdiff.py  
+- 描述：计算差分电荷
+- 环境: python, 需要安装numpy,ase  
+``` shell
+pip3 install numpy
+pip3 install ase 
+```
+- 用法：  
+``` shell
+./chgdiff.py CHGCAR1 CHGCAR2  #输出文件名为 CHGDIFF.
+```
+- 注意，该脚本来源于
+> https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP
+使用该脚本请关注 https://github.com/Chengcheng-Xiao/
+---
+
+## 结构变换脚本
 ---
 
 # 后面会逐渐增加其他脚本的使用方法
