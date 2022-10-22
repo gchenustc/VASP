@@ -32,8 +32,8 @@ python -c POSCAR1 POSCAR2 -o POSCAR_out1 POSCAR_out2 -n 10 12
 ---
   
 3. MSDVasp.sh, MSDVasp.py  
-- 描述：计算分子动力学的MSD, 只支持立方，四方，正交晶系，因为是早期写的脚本，有些结构可能会出错  
-- 环境: shell, python  
+- 描述：计算分子动力学的MSD, 只支持立方，四方，正交晶系，因为是早期写的脚本，有些结构可能会出错，找时间再debug，现在不推荐使用  
+- 环境：shell, python  
 python需安装numpy，matplotlib和pandas，如果需要保存图片，要在Linux中创建文件 ~/.config/matplotlib/matplotlibrc。添加 backend : Agg  
 ``` sheLL
 pip install numpy
