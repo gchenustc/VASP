@@ -52,7 +52,7 @@ chmod u+x MSDVasp.sh
   
 4. chgdiff.py  
 - 描述：计算差分电荷
-- 环境: python, 需要安装numpy,ase  
+- 环境：python, 需要安装numpy,ase  
 ``` shell
 pip3 install numpy
 pip3 install ase 
@@ -61,7 +61,7 @@ pip3 install ase
 ``` shell
 python chgdiff.py CHGCAR1 CHGCAR2  #输出文件名为 CHGDIFF.
 ```
-- 注意，该脚本来源于SS
+- 注意，该脚本来源于
 > https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP  
 使用该脚本请关注 "https://github.com/Chengcheng-Xiao/"  
 ---
