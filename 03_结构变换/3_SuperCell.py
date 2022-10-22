@@ -1,94 +1,235 @@
+#!/usr/bin/env python
+"""
+A script to make supercell and find atomic distance
+"""
+
+from __future__ import print_function
+import argparse
+from ase.io import read, write
+from ase.build.supercells import make_supercell
+from ase import Atoms
+from ase.visualize import view
 import numpy as np
+import os
+import sys
+import datetime
+import time
 
-class CellExpansion(object):
-    """
-    扩胞
-    CellExpansion(input_path = 'POSCAR', out_path='POSCAR_out', cell = [2,2,2])
-    """
-    def __init__(self, input_path = 'POSCAR', out_path='POSCAR_out', cell = [1,1,1]):
-        self.input_path = input_path
-        self.out_path = out_path
-        self.cell =cell
-        
-        self.pos_arr = np.loadtxt(input_path,dtype=np.float64,skiprows=8)
-        self.pos_arr_bak = self.pos_arr.copy()
-        self.const_arr = np.loadtxt(input_path,dtype=np.float64,skiprows=2,max_rows=3)
-        
-        # 判断原子坐标类型 - Cartesian or Direct
-        coord_type = str(np.loadtxt('POSCAR',dtype='object',skiprows=7,max_rows=1)).lower()
-        # 如果是分数坐标，改成笛卡尔坐标
-        if coord_type[0] == "d":
-            self.pos_arr = CellExpansion.fra2car(self.pos_arr, self.const_arr)
-        
-        # 原子信息-种类&数量
-        self.atoms_info = np.loadtxt(input_path,dtype='object',skiprows=5,max_rows=2).reshape((2,-1)) # np-[['N','O'],[5,5]]
-        self.atoms_info[1] = self.atoms_info[1].astype('i4')
-        self.atoms_num = self.pos_arr.shape[0]
-        
-        # main
-        self.expandCell()
-        self.retPoscar()
-        
+# is digit? function
+def check_int(s):
+    if s[0] in ('-', '+'):
+        return s[1:].isdigit()
+    return s.isdigit()
 
-    @staticmethod
-    def fra2car(pos_arr, const):
-        """将分数坐标转换为笛卡尔坐标，传入的参数分别为分数坐标和晶格常数"""
-        return np.dot(pos_arr,const)
-    
-    @staticmethod
-    def car2fra(pos_arr, const):
-        """将笛卡尔坐标转换为分数坐标，传入的参数分别为笛卡尔坐标和晶格常数"""
-        return np.dot(pos_arr, np.linalg.inv(const))
+# Command line praser
+#----------------------------
+parser = argparse.ArgumentParser(description='A script to make supercell(transformed supercell) and measure atomic distances.')
+parser.add_argument('-o','--overwrite', action="store_true", default=False, dest='over',
+                    help='Overwrite POSCAR?. (Default=False)')
+parser.add_argument('-vi','--visualize', action="store_true", default=False, dest="visualize",
+                    help='Use ASE-GUI to visualize structure (Default=False)')
+parser.add_argument('-v', '--verbose', action="store_true", default=False, dest="prt",
+                    help='print out info? (Default=False)')
+parser.add_argument('-c','--POSCAR', action="store", default=str('POSCAR'), dest="POSCAR",
+                    help='Input file name (Default=POSCAR)')
+parser.add_argument('-d', action="store_true", default=False, dest="get_super",
+                    help='Make supercell? (Default=False)')
+parser.add_argument('--dim', action="store", default="1 0 0 0 1 0 0 0 1", dest="T_mat",
+                    help='Transformation matrix (full matrix"1,0,0,0,1,0,0,0,1" or diagonal terms "1 1 1")')
+parser.add_argument('-di', action="store_true", default=False, dest="getdist",
+                    help='Get distance? (Default=False)')
+parser.add_argument('--dis', action="store", default="1 2", dest="atom_list",
+                    help='Distance between atoms a and b, starting from 1 (Default="1 2")')
 
-    def retPoscar(self):
-        """
-        输出 vasp - POSCAR 文件
-        """
-        with open(self.input_path,'r') as f:
-            head = f.readlines()
-            head_copy = head[:] # bak
+prm = parser.parse_args()
 
-            head = head[:8]
-            sep = ' '*10
-            head[2] = sep.join(map(str,self.const_arr[0].tolist())) + '\n'
-            head[3] = sep.join(map(str,self.const_arr[1].tolist())) + '\n'
-            head[4] = sep.join(map(str,self.const_arr[2].tolist())) + '\n'
-            head[5] = '    ' + ' '.join(self.atoms_info[0].tolist()) + '\n'
-            head[6] = '    ' + ' '.join(list(map(str,self.atoms_info[1].tolist()))) + '\n'
-            head[7] = 'Cartesian\n'
-            #head.append('Selective dynamics\n')
+# Starting
+#----------------------------
+if prm.prt == True:
+    starttime = time.time()
+    print("Starting calculation at", end='')
+    print(time.strftime("%H:%M:%S on %a %d %b %Y"))
 
-            # 写入
-            with open(self.out_path,'w') as fw:
-                fw.writelines(head)
-                np.savetxt(fw,self.pos_arr,fmt='%.8f',delimiter=sep)
-                
-    @staticmethod
-    def expandAlongSingleAxis(pos_arr, const_arr, direction=[1,0,0], value=3):
-        """
-        """
-        pos = pos_arr
-        ret = pos_arr[:,np.newaxis,:].copy() # 初始 ret.shape = [10,1,3]，方便之后 concatenate
-        direct_index = np.argwhere(np.array(direction)==1)[0][0] # 返回0,1或者2
-        vector = const_arr[direct_index]
-        
-        for i in range(value):
-            pos_arr = pos_arr + vector  # numpy 中 a = a+b 和 a +=b 不一样，前者a的地址更新，后者不会
-            pos_arr_concat = pos_arr[:,np.newaxis,:]
-            ret = np.concatenate((ret,pos_arr_concat),1)
-            #print(pos[:10], pos_arr[:10], ret[:10])
-        return ret
-    
-    def expandCell(self):
-        for index,i in enumerate(self.cell):
-            direction = np.zeros(3)
-            direction[index] = 1
-            self.pos_arr = CellExpansion.expandAlongSingleAxis(self.pos_arr, self.const_arr, direction, i-1).reshape((-1,3))
-        
-        # 原子数目改变
-        self.atoms_info[1] *=  np.multiply.accumulate(np.array(self.cell))[2]
-        # 胞长改变
-        self.const_arr *= np.array(self.cell).reshape((3,1))
-            
-if __name__=="__main__":
-    ce = CellExpansion(cell=[2,2,2])
+# check input
+if not os.path.isfile(prm.POSCAR):
+    print("\n** ERROR: Initial position file %s was not found." % prm.POSCAR)
+    sys.exit(0)
+
+if prm.get_super == True:
+    # initialize Tmat
+    Tmat = np.eye(3)
+    # construct Tmat
+    if len(prm.T_mat.split()) == 9:
+        if all(check_int(s) for s in prm.T_mat.split()):
+            #print(np.array(prm.T_mat.split(),dtype=int).reshape([3,3]))
+            Tmat = np.array(prm.T_mat.split(),dtype=int).reshape([3,3])
+            #Tmat = np.reshape(list(map(int, prm.T_mat.split()),[3,3]))
+        else:
+            print("\n** ERROR: Transformation matrix elements should be int.")
+            sys.exit(0)
+    elif len(list(map(int, prm.T_mat.split()))) == 3:
+        if all(check_int(s) for s in prm.T_mat.split()):
+            np.fill_diagonal(Tmat,list(map(int, prm.T_mat.split())))
+        else:
+            print("\n** ERROR: Transformation matrix elements should be int.")
+            sys.exit(0)
+    else:
+        print("\n** ERROR: dimension of the transformation matrix wrong.")
+        sys.exit(0)
+
+if prm.getdist ==True:
+    if len(prm.atom_list.split()) == 2:
+        if all(check_int(s) for s in prm.atom_list.split()):
+            atom_list = list(map(int, prm.atom_list.split()))
+        else:
+            print("\n** ERROR: Indexes of atoms should be int.")
+            sys.exit(0)
+    else:
+        print("\n** ERROR: number indexes of atoms should be 2.")
+        sys.exit(0)
+
+
+# Read information from command line
+# First specify location of POSCAR
+i_POSCAR=prm.POSCAR.lstrip()
+
+if prm.prt == True:
+    print("\nPosition file name: %s " % i_POSCAR)
+    # print("Symmetry tolerance: %s" % prm.symmetry)
+
+# get cell informations
+#----------------------------
+initial_pos = read(i_POSCAR)#, format='vasp')
+lattice     = initial_pos.get_cell()
+positions   = initial_pos.get_scaled_positions()
+numbers     = initial_pos.get_atomic_numbers()
+# Magnetic moments are not considered in get_spacegroup method
+#magmoms = [np.ones(initial_pos.get_number_of_atoms())]
+#initial_cell = (lattice, positions, numbers)
+
+if prm.prt == True:
+    print('\n===========================================')
+    print('\nInitial Structure')
+    print("\nLattice Matrix  : (in Angstrom) ")
+    print(np.array_str(lattice.array, precision=8))
+    print("\nAtomic Positions: (in direct coordinate) ")
+    print(positions)
+    print("\nAtomic numbers  : (for each atom) ")
+    print(numbers)
+    print('\n===========================================')
+# visualize
+if prm.visualize == True:
+    view(initial_pos)
+
+# get atomic species
+# fin = [initial_pos.get_chemical_symbols()[0]]
+# for i in range(len(initial_pos.get_chemical_symbols())):
+#     if i == len(initial_pos.get_chemical_symbols())-1: break
+#     if initial_pos.get_chemical_symbols()[i] != initial_pos.get_chemical_symbols()[i+1]:
+#         fin.append(initial_pos.get_chemical_symbols()[i+1])
+atom_species=set(initial_pos.get_chemical_symbols()) # 2022-09-14: use set here.
+
+# make supercell
+#----------------------------
+if prm.get_super == True:
+    del initial_pos.constraints
+    super_cell = make_supercell(initial_pos,Tmat)
+
+    # some post processing...
+    #----------------------------
+    indices = []
+    symbls    = []
+    for symbol in atom_species:
+        ii = 0
+        for atom in super_cell.get_chemical_symbols():
+            if atom == symbol:
+                indices.append(ii) # get sorted atomic index
+                symbls.append(symbol) # get sorted atomic symbols
+            ii += 1
+
+    pos_new     = [super_cell.get_positions()[i] for i in indices]
+    super_cell.set_positions(pos_new)
+    super_cell.set_chemical_symbols(symbls)
+
+    # get supercell informations
+    #----------------------------
+    lattice     = super_cell.get_cell()
+    positions   = super_cell.get_scaled_positions()
+    numbers     = super_cell.get_atomic_numbers()
+
+    if prm.prt == True:
+        print('\n===========================================')
+        print('\nSuper Structure')
+        print("\nLattice Matrix  : (in Angstrom) ")
+        print(np.array_str(lattice.array, precision=8))
+        print("\nAtomic Positions: (in direct coordinate) ")
+        print(positions)
+        print("\nAtomic numbers  : (for each atom) ")
+        print(numbers)
+        print('\n===========================================')
+    # visualize?
+    if prm.visualize==True:
+        view(super_cell)
+
+    # Write super structure to file
+    if prm.over == True:
+        write("POSCAR", super_cell, format='vasp')
+    else:
+        write(i_POSCAR+"_"+"super"+".vasp",super_cell,format='vasp')
+
+
+    if float(sys.version.split()[0][:3]) < 3.0:
+        # adding atomic species
+        #----------------------------
+        # get species
+        # fin = [super_cell.get_chemical_symbols()[0]]
+        # for i in range(len( super_cell.get_chemical_symbols())):
+        #     if i == len( super_cell.get_chemical_symbols())-1: break
+        #     if  super_cell.get_chemical_symbols()[i] !=  super_cell.get_chemical_symbols()[i+1]:
+        #         fin.append( super_cell.get_chemical_symbols()[i+1])
+        # atom_species=set(super_cell.get_chemical_symbols())
+
+        # open file and readlines
+        if prm.over == True:
+            f = open("POSCAR", "r")
+        else:
+            f = open(i_POSCAR+"_"+"super"+".vasp", "r")
+        contents = f.readlines()
+        f.close()
+        # format string
+        contents.insert(5, ' '.join(atom_species)+'\n')
+        # write string to file
+        if prm.over == True:
+            f = open("POSCAR", "r")
+        else:
+            f = open(i_POSCAR+"_"+"super"+".vasp", "w")
+        contents = "".join(contents)
+        f.write(contents)
+        f.close()
+
+    # output
+    if prm.prt == True:
+        if prm.over == False:
+            print("\nOutput file name: %s " % str(i_POSCAR+"_"+"super"+".vasp"))
+
+
+# get distance
+#----------------------------
+if prm.getdist == True:
+    # here we use natural: atomic number starting from 1.
+    dist = initial_pos.get_distance(atom_list[0]-1,atom_list[1]-1)
+    if prm.prt == True:
+        sys.stdout.write("\033[1;31m" ) # set color red
+        print("\nDistance between atom %d and %d: %f" %(atom_list[0], atom_list[1], dist))
+        sys.stdout.write("\033[0;0m") # reset color
+    else:
+        print(dist)
+
+
+if prm.prt == True:
+    # Post process
+    #----------------------------
+    endtime = time.time()
+    runtime = endtime-starttime
+    print("\nEnd of calculation.")
+    print("Program was running for %.2f seconds." % runtime)

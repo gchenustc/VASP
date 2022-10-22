@@ -1,83 +1,97 @@
+from ordered_set import OrderedSet
+import argparse
+import spglib
+import ase
+from ase.io import read, write
+from ase import Atoms
+from ase.visualize import view
 import numpy as np
+import os
+import sys
+import datetime
+import time
+import numpy as np
+"""
+description: Sort atoms along correscoping axis(eg. x, y or z)
+usage:
+python *.py -c POSCAR1 POSCAR2 -x
+"""
 
-class SortAtoms(object):
-    """
-    将 POSCAR 原子按照指定轴进行排序
-    SortAtoms(input_path = 'POSCAR', out_path='POSCAR_out', axis='z')
-    Parameters:
-    input_path: 输入文件路径
-    out_path: 输出文件路径
-    axis: 排序的方向，dtype=str
+# argparser
+parser = argparse.ArgumentParser(description="Sort atoms along the specific axis")
+parser.add_argument('-c','--POSCAR', default=["POSCAR"], nargs="+", help="Specify the POSCAR file")
+parser.add_argument('-v','--visualize', action="store_true", default=False, help='Use ASE-GUI to visualize structure (Default=False)')
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-x', action="store_true", default=False, help="x axis sorting")
+group.add_argument('-y', action="store_true", default=False, help="y axis sorting")
+group.add_argument('-z', action="store_true", default=False, help="z axis sorting")
+prm = parser.parse_args()
+
+# Starting
+starttime = time.time()
+print("Starting calculation at", end='')
+print(time.strftime("%H:%M:%S on %a %d %b %Y"))
+
+# strip
+i_poscars = [pos.strip() for pos in prm.POSCAR]
+i_poscars_r = [ase.io.read(pos) for pos in i_poscars]
+
+# get cell data
+n = [pos.get_global_number_of_atoms() for pos in i_poscars_r] # 原子数
+numbers = [pos.numbers for pos in i_poscars_r]
+positions = [pos.positions for pos in i_poscars_r]
+scaled_positions = [pos.get_scaled_positions() for pos in i_poscars_r]
+lattice = [pos.cell for pos in i_poscars_r]
+cell_lenth_angle = [pos.get_cell_lengths_and_angles() for pos in i_poscars_r]
+symbols = [pos.get_chemical_symbols() for  pos in i_poscars_r]
+
+if prm.visualize==True:
+    view(i_poscars_r)
+
+
+# 排序操作
+def sortAtoms(numbers, positions, axis):
     
-    Methods:
-    retPoscar(self): 输出排序后的 POSCAR
-    getTotalSortIndex(self): 得到所有原子排序的index值. eg：[3,1,0,4] --> [2,1,0,3]
-    """
-    def __init__(self, input_path = 'POSCAR', out_path='POSCAR_out', axis='z'):
-        self.input_path = input_path
-        self.out_path = out_path
-        self.sort_axis = axis
-        
-        self.pos_arr = np.loadtxt(input_path,dtype=np.float64,skiprows=8)
-        self.pos_arr_bak = self.pos_arr.copy()
-        self.const_arr = np.loadtxt(input_path,dtype=np.float64,skiprows=2,max_rows=3)
-        
-        # 原子信息-种类&数量
-        self.atoms_info = np.loadtxt(input_path,dtype='object',skiprows=5,max_rows=2).reshape((2,-1))
-        self.atoms_num = self.pos_arr.shape[0]
-
-        # 排序
-        self.sortAtoms()
-        
-    def retPoscar(self):
-        """
-        输出 vasp - POSCAR 文件
-        """
-        with open(self.input_path,'r') as f:
-            head = f.readlines()
-            head_copy = head[:] # bak
-
-            head = head[:8]
-            sep = ' '*10
-            head[2] = sep.join(str(self.const_arr[0].tolist()).strip('[]').split(',')) + '\n'
-            head[3] = sep.join(str(self.const_arr[1].tolist()).strip('[]').split(',')) + '\n'
-            head[4] = sep.join(str(self.const_arr[2].tolist()).strip('[]').split(',')) + '\n'
-            head[6] = '    ' + '   '.join(str(list(map(int,self.atoms_info[1].tolist()))).strip('[]').split(',')) + '\n'  
-            #head.append('Selective dynamics\n')
-
-            # 写入
-            with open(self.out_path,'w') as fw:
-                fw.writelines(head)
-                np.savetxt(fw,self.pos_arr,fmt='%.8f',delimiter=sep)
-
-    def sortAtoms(self):
-        # 将用户输入的排序方向与numpy数组方向对应，比如 'x'-->1
-        axis_range_list = ['x','X','a','A','y','Y','b','B','z','Z','c','C']
-        assert self.sort_axis in axis_range_list
-
-        axis_value_list = [0,0,0,0,1,1,1,1,2,2,2,2]
-        axis_corres_dict = dict(zip(axis_range_list,axis_value_list))
-        axis_value = axis_corres_dict[self.sort_axis]
-        self.axis_value = axis_value
-
-        accu_before = 0
-        accu_after = 0
-        
-        # 按照不同的原子类别进行排序
-        for each_kind_num in map(int,self.atoms_info[1]):
-            accu_after += each_kind_num
-            
-            pos_arr_segment = self.pos_arr[accu_before:accu_after]
-            index_segment = np.argsort(pos_arr_segment,0)[:,axis_value]
-            self.pos_arr[accu_before:accu_after] = pos_arr_segment[index_segment]
-
-            accu_before += each_kind_num
-
-        
-    def getTotalSortIndex(self):
-        return np.argsort(self.pos_arr_bak, 0)[:,self.axis_value]
+    # 相同元素簇放一起
+    indicx_temp = np.array(numbers).argsort()[::-1] # 按分子量从大到小
+    numbers = numbers[indicx_temp]
+    positions = positions[indicx_temp]
+#     print(positions)
     
-                
-if __name__ == "__main__":
-    sort_ = SortAtoms(input_path = 'POSCAR', out_path='POSCAR_out', axis='y')
-    sort_.retPoscar()
+    # 对不同的簇进行排序
+    groups = OrderedSet(numbers)
+    n_groups = len(groups)
+    n_each_groups = []
+    for group in groups:
+         n_each_groups.append(numbers.tolist().count(group)) 
+#     print(n_each_groups) # [3,1]
+    
+    index = n_each_groups
+    index.insert(0,0)
+    index = np.array(index).cumsum()
+#     print(index) # [0,3,4]
+    for i in range(1,len(index)):
+        i_section = positions[index[i-1]:index[i]]
+        f_section = i_section[np.argsort(i_section[:,axis])]
+        positions[index[i-1]:index[i]]= f_section
+    return numbers, positions
+
+if prm.x:
+    axis = 0
+elif prm.y:
+    axis = 1
+else:
+    axis = 2
+numbers,positions = zip(*[sortAtoms(n,p,axis) for n,p in zip(numbers, positions)])
+
+# final poscar class
+atoms = [ase.Atoms(numbers=n, cell=c, positions=p, pbc=True) for n,c,p in zip(numbers, lattice, positions)]
+
+# write
+[ase.io.write("POSCAR_out", atom, format='vasp') for atom in atoms]
+
+endtime = time.time()
+runtime = endtime-starttime
+print("\nEnd of calculation.")
+print(time.strftime("%H:%M:%S on %A %d %B %Y"))
+print("Program was running for %.2f seconds." % runtime)

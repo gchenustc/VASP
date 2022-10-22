@@ -1,45 +1,76 @@
-"""
-作用：main('POSCAR',x,y,z) 指的是对POSCAR分别沿着a,b,c轴移动x,y,z埃
-
-只支持 vasp 的 POSCAR 格式
-且 POSCAR是笛卡尔坐标
-"""
-
+import argparse
+import spglib
+import ase
+from ase.io import read, write
+from ase import Atoms
+from ase.visualize import view
 import numpy as np
 import os
-from math import sqrt,pow
-import shutil
+import sys
+import datetime
+import time
+import numpy as np
+"""
+description: Move atoms along the specific axis
+usage:
+python *.py -c POSCAR1 POSCAR2 -m 0 0 1 # 将POSCAR1和POSCAR2沿着c轴移动1A，可以不传入-c，默认文件名为POSCAR
+python *.py -c POSCAR1 POSCAR2 -m 0 0 1 -v # -v 可视化处理后的图像
+"""
 
-def retPoscar(poscar, const, arr):
-    """
-    输出指定的 POSCAR
-    """
-    atomsNum = arr.shape[0]
+def is_number(s):
+    """如果字符串s为浮点数或者整数，返回True"""
+    if str(s).isnumeric(): # isdigit(), isdecimal()
+        return True
+    try:
+        float(s)
+        return True
+    except:
+        pass
+    return False
+
+# argparser
+parser = argparse.ArgumentParser(description="Move atoms along the specific axis")
+parser.add_argument('-c','--POSCAR', default=["POSCAR"], nargs="+", help="Specify the POSCAR file")
+parser.add_argument('-v','--visualize', action="store_true", default=False, help='Use ASE-GUI to visualize structure (Default=False)')
+parser.add_argument('-m','--moving', required=True, nargs=3, help="Specify the length moved along corresponding basis vetor(x,y,z)")
+prm = parser.parse_args()
+
+# Starting
+starttime = time.time()
+print("Starting calculation at", end='')
+print(time.strftime("%H:%M:%S on %a %d %b %Y"))
+
+# 检测输入
+for i in prm.moving:
+    if not is_number(i):
+        print("arg following -m must be the number")
+moving = list(map(lambda x:float(x), prm.moving))
+
+# strip
+i_poscars = [pos.strip() for pos in prm.POSCAR]
+i_poscars_r = [ase.io.read(pos) for pos in i_poscars]
+
+n = [pos.get_global_number_of_atoms() for pos in i_poscars_r] # 原子数
+numbers = [pos.numbers for pos in i_poscars_r]
+positions = [pos.positions for pos in i_poscars_r]
+lattice = [pos.cell for pos in i_poscars_r]
+symbols = [pos.get_chemical_symbols() for  pos in i_poscars_r]
+
+if prm.visualize==True:
+    view(i_poscars_r)
     
-    with open(poscar,'r') as f:
-        head = f.readlines()
-        head_copy = head[:] # bak
+# moving operate
+for position in positions:
+    position += moving
+    
+# Atom class
+atoms = [ase.Atoms(numbers=n, cell=c, positions=p, pbc=True) for n,c,p in zip(numbers, lattice, positions)]
 
-        head = head[:8]
-        head[2] = '    '.join(str(const[0].tolist()).strip('[]').split(',')) + '\n'
-        head[3] = '    '.join(str(const[1].tolist()).strip('[]').split(',')) + '\n'
-        head[4] = '    '.join(str(const[2].tolist()).strip('[]').split(',')) + '\n'
-        head[6] = str(atomsNum) + '\n'
-        with open('b.vasp.new','w') as fw:
-            fw.writelines(head)
-            np.savetxt(fw,arr,fmt='%.8f')
+# write
+[ase.io.write(f"POSCAR_out{i+1}", atom, format='vasp') for i,atom in enumerate(atoms)]
 
-def main(poscar, upmove=0, forwardmove=0, rightmove=0):
-
-    arr_ori = np.loadtxt(poscar,dtype=np.float64,skiprows=8)
-    const = np.loadtxt(poscar,dtype=np.float64,skiprows=2,max_rows=3)
-
-    arr = arr_ori.copy()
-    arr[:,0] += upmove
-    arr[:,1] += forwardmove
-    arr[:,2] += rightmove
-
-    retPoscar(poscar, const, arr)
-
-if __name__ == "__main__":
-    main('POSCAR',0,0,0)
+endtime = time.time()
+runtime = endtime-starttime
+print("\nEnd of calculation.")
+print(time.strftime("%H:%M:%S on %A %d %B %Y"))
+print("Program was running for %.2f seconds." % runtime)
