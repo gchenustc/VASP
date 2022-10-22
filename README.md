@@ -59,12 +59,29 @@ pip3 install ase
 ```
 - 用法：  
 ``` shell
-./chgdiff.py CHGCAR1 CHGCAR2  #输出文件名为 CHGDIFF.
+chgdiff.py CHGCAR1 CHGCAR2  #输出文件名为 CHGDIFF.
 ```
 - 注意，该脚本来源于
-> https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP
-使用该脚本请关注 https://github.com/Chengcheng-Xiao/
+> https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP  
+使用该脚本请关注 "https://github.com/Chengcheng-Xiao/"
 ---
+
+5. kpGen.py  
+- 描述：产生KPOINTs文件  
+- 环境: python, 需要安装numpy,ase, seekpath  
+``` shell
+pip3 install numpy
+pip3 install ase 
+pip3 install seekpath 
+```
+- 用法：  
+``` shell
+kpGen.py -c POSCAR  # the most concise usage
+kpGen.py -c POSCAR -r 0.2 -s 0.01 # -r: 相邻k点的距离(unit: ang), -s: 对称性检测的精度
+```
+- 注意，该脚本来源于
+> https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP  
+使用该脚本请关注 "https://github.com/Chengcheng-Xiao/"
 
 ## 结构变换脚本
 ---
