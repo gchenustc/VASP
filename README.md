@@ -7,7 +7,7 @@
 ## 功能性脚本
 1. Fixatoms.sh  
 - 描述：按照沿着z轴的顺序从底部开始固定胞原子  
-- 环境: Shell 
+- 环境：Shell 
 - 用法：  
 ``` shell
 chmod u+x Fixatoms.sh
@@ -17,7 +17,7 @@ chmod u+x Fixatoms.sh
   
 2. Fixatoms.py  
 - 描述：按照沿着z轴的顺序从底部开始固定胞原子  
-- 环境: python, 需要安装numpy  
+- 环境： python, 需要安装numpy  
 ``` shell
 pip3 install numpy
 ```
