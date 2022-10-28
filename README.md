@@ -188,5 +188,33 @@ pip3 install ase
 python ToCartesian.py -c POSCAR
 ```
 
+8. CalcCohp.py  
+- 描述：计算cohp  
+- 环境：python, 需要安装numpy,ase  
+``` shell
+pip3 install numpy  
+pip3 install ase 
+```
+- 用法：  
+``` shell  
+python current_file.py -l lobster  # -l 后指定lobster的执行命令
+python current_file.py -l lobster -p -a 2 4 5 7  # 出现 -p 则表示计算指定原子的cohp(否则计算所有原子的cohp), -a 后为指定原子的序号，比如示例将计算序号为2和4以及5和7原子的cohp
+```
+- 注意，用ase调用vasp计算需要配置好vasp的执行环境和POTCAR的目录位置，可以看官网教程 
+> https://wiki.fysik.dtu.dk/ase/ase/calculators/vasp.html#introduction
+---
+
+9. PlotCohp.py  
+- 描述：用CalcCohp.py计算cohp后，用此脚本批量绘图
+- 环境：python, 需要安装numpy,matplotlib  
+``` shell
+pip3 install numpy  
+pip3 install matplotlib
+```
+- 用法：  
+``` shell
+python PlotCohp.py
+```
+
 # 后面会逐渐增加其他脚本的使用方法
 
