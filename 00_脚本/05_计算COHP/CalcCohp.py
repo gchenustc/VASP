@@ -40,7 +40,7 @@ atoms.set_constraint(fixed)
 
 # 调用VASP
 calc = Vasp(\
-      directory="./workdir", # 计算路径
+      directory="./", # 计算路径
       txt="./out.log", # vasp输出文件名
 
       npar=8,
@@ -57,16 +57,16 @@ calc = Vasp(\
       isym=-1,
       prec="Accurate",
       encut=520,
-      kpts = [13,13,1],
-      gamma = "True",
-      nbands = 242,
+      kpts = [10,10,1],
+      gamma = "False",
+      nbands = 250,
 
       #algo = "FAST",
       ialgo=38,
       nelm=300,
       nelmin=8,
       ediff=1E-6,
-      ismear=0,
+      ismear=-5,
       sigma=0.05,
 
       lwave=".T.",
@@ -81,24 +81,28 @@ atoms.calc = calc
 atoms.get_potential_energy()
 
 # 用ase加载已经完成计算的vasp
-# calc = Vasp(restart=True, directory="vasp")  # ../vasp为vasp存储路径
+# calc = Vasp(restart=True, directory="./")  # ../vasp为vasp存储路径
 atoms = calc.get_atoms()
 
 # 获得成键原子的索引
 # [(1, 31, array([0, 0, 0])), ..., ]
 bondpairs_raw = get_bondpairs(atoms) 
 
-bondpairs = []
-for bp in bondpairs_raw:
-    tmp = list(bp[:2])  # [1,31], ...
-    tmp.sort() # 排序，因为还存在[31,1]，排除等价情况
-    if tmp not in bondpairs:
-        bondpairs.append(tmp)
-    bondpairs.sort(key=lambda x:x[0]) # 按照list里的每个子list的第一个数排序 --> [[0,30],...,[1,31],...,]
+if args.appoint:
+    # 将输入[2,4,6,3,...] 转换成 [[1,3],[5,2],...]
+    bondpairs = [(args.atoms[i]-1,args.atoms[i+1]-1) for i in range(len(args.atoms)) if not i%2]
+else:
+    bondpairs = []
+    for bp in bondpairs_raw:
+        tmp = list(bp[:2])  # [1,31], ...
+        tmp.sort() # 排序，因为还存在[31,1]，排除等价情况
+        if tmp not in bondpairs:
+            bondpairs.append(tmp)
+        bondpairs.sort(key=lambda x:x[0]) # 按照list里的每个子list的第一个数排序 --> [[0,30],...,[1,31],...,]
 
 f = open('labels', 'w')
 for bp in bondpairs:
-    f.write(f"{atoms.get_chemical_symbols()[bp[0]]}[{bp[0]}]-{atoms.get_chemical_symbols()[bp[1]]}[{bp[1]}]\n")
+    f.write(f"{atoms.get_chemical_symbols()[bp[0]]}[{bp[0]+1}]-{atoms.get_chemical_symbols()[bp[1]]}[{bp[1]+1}]\n")
 f.close()
 
 # 写入lobster 的输入参数
@@ -108,14 +112,8 @@ with open('lobsterin', 'w') as f:
     f.write('usebasisset pbeVaspFit2015\n')
     f.write('useRecommendedBasisFunctions\n')
     f.write('gaussianSmearingWidth 0.05\n')
-    if not args.appoint:
-        for bp in bondpairs:
-            f.write(f'cohpbetween atom {bp[0]+1} and atom {bp[1]+1}\n')
-    else:
-        # 将输入[2 4 6 3] 转换成 [[2,4],[6,3]]
-        bondpairs = [(args.atoms[i],args.atoms[i+1]) for i in range(len(args.atoms)) if not i%2]
-        for bp in bondpairs:
-            f.write(f'cohpbetween atom {bp[0]} and atom {bp[1]}\n')
+    for bp in bondpairs:
+        f.write(f'cohpbetween atom {bp[0]+1} and atom {bp[1]+1}\n')
 
 # 执行lobster      
 os.system(args.lobster)
