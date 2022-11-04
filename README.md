@@ -30,23 +30,24 @@ python -c POSCAR1 POSCAR2 -o POSCAR_out1 POSCAR_out2 -n 10 12
 ```
 ---
   
-3. MSDVasp.sh, MSDVasp.py  
-- 描述：计算分子动力学的MSD, 只支持立方，四方，正交晶系，因为是早期写的脚本，有些结构可能会出错，找时间再debug，现在不推荐使用  
-- 环境：shell, python  
-python需安装numpy，matplotlib和pandas，如果需要保存图片，要在Linux中创建文件 ~/.config/matplotlib/matplotlibrc。添加 backend : Agg  
+3. MSD.py 
+- 描述：计算分子动力学的MSD, 需要准备XDATCAR, 输出msd.png, msd-element.png, msd.out, msd.out文本的形式可以在origin绘图  
+- 环境：python  
+python需安装numpy，matplotlib，pandas和ase  
 ``` sheLL
 pip install numpy
 pip install matplotlib
 pip install pands
+pip install ase
+```
 ```
 - 用法：  
-``` shell
-# 1. 将计算完的POSCAR和XDATCAR文件与MSDVasp.sh, MSDVasp.py文件放在同一个目录下
-# 2.
-chmod u+x MSDVasp.sh
-# 3.
-./MSDVasp.sh
+python MSD.py -p 0.5 # -p 指定步长
 ```
+- 其他: 
+- MSD_tetra.py 与之用法一样，但只支持四方晶体
+- MSD_Liujiapeng.py 来自:
+> https://github.com/jiapeng-liu/Mean-Squared-Displacment_msd_for_vasp
 ---
   
 4. chgdiff.py  
@@ -215,6 +216,19 @@ pip3 install matplotlib
 ``` shell
 python PlotCohp.py
 ```
+---
 
-# 后面会逐渐增加其他脚本的使用方法
+10. AveBondLen.py  
+- 描述：计算晶体所有成键原子间的平均键长  
+- 环境：python, 需要安装numpy,ase  
+``` shell
+pip3 install numpy  
+pip3 install ase--
+```
+- 用法：  
+``` shell
+python AveBondLen.py
+```
+---
+
 
