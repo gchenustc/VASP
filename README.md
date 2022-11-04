@@ -1,5 +1,4 @@
 # VASP脚本手册  
-自用的VASP前处理和后处理脚本   
 ---
   
 # 使用教程
@@ -43,10 +42,10 @@ pip install ase
 ```
 - 用法：  
 python MSD.py -p 0.5 # -p 指定步长
-```
 - 其他: 
+```
 - MSD_tetra.py 与之用法一样，但只支持四方晶体
-- MSD_Liujiapeng.py 来自:
+- MSD_Liujiapeng.py 该脚本来源于:
 > https://github.com/jiapeng-liu/Mean-Squared-Displacment_msd_for_vasp
 ---
   
@@ -55,7 +54,7 @@ python MSD.py -p 0.5 # -p 指定步长
 - 环境：python, 需要安装numpy,ase  
 ``` shell
 pip3 install numpy
-pip3 install ase 
+pip3 install ase
 ```
 - 用法：  
 ``` shell
@@ -63,7 +62,6 @@ python chgdiff.py CHGCAR1 CHGCAR2  #输出文件名为 CHGDIFF.
 ```
 - 注意，该脚本来源于
 > https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP  
-使用该脚本请关注 "https://github.com/Chengcheng-Xiao/"  
 ---
   
 5. kpGen.py  
@@ -71,8 +69,8 @@ python chgdiff.py CHGCAR1 CHGCAR2  #输出文件名为 CHGDIFF.
 - 环境：python, 需要安装numpy,ase, seekpath  
 ``` shell
 pip3 install numpy
-pip3 install ase 
-pip3 install seekpath 
+pip3 install ase
+pip3 install seekpath
 ```
 - 用法：  
 ``` shell
@@ -81,7 +79,6 @@ python kpGen.py -c POSCAR -r 0.2 -s 0.01 -o KPOINTS # -r: 相邻k点的距离(un
 ```
 - 注意，该脚本来源于
 > https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP  
-使用该脚本请关注 "https://github.com/Chengcheng-Xiao/"  
 ---
   
 ## 结构变换脚本  
@@ -144,7 +141,6 @@ python SuperCell.py -c POSCAR -d --dim '2 2 2' # 扩222的胞
 ```
 - 注意，该脚本来源于
 > https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP  
-使用该脚本请关注 "https://github.com/Chengcheng-Xiao/"  
 ---
 
 5. ImposeSym.py  
@@ -161,7 +157,6 @@ python ImposeSym.py -c POSCAR -s 0.1  # -s is the recongnize accuracy
 ```
 - 注意，该脚本来源于
 > https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP  
-使用该脚本请关注 "https://github.com/Chengcheng-Xiao/"  
 ---
 
 6. ToFraction.py  
