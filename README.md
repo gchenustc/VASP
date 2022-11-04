@@ -29,7 +29,7 @@ python -c POSCAR1 POSCAR2 -o POSCAR_out1 POSCAR_out2 -n 10 12
 ```
 ---
   
-3. MSD.py 
+3. MSD.py  
 - 描述：计算分子动力学的MSD, 需要准备XDATCAR, 输出msd.png, msd-element.png, msd.out, msd.out文本的形式可以在origin绘图  
 - 环境：python  
 python需安装numpy，matplotlib，pandas和ase  
@@ -39,14 +39,14 @@ pip install matplotlib
 pip install pands
 pip install ase
 ```
-```
 - 用法：  
-python MSD.py -p 0.5 # -p 指定步长
-- 其他: 
 ```
-- MSD_tetra.py 与之用法一样，但只支持四方晶体
-- MSD_Liujiapeng.py 该脚本来源于:
-> https://github.com/jiapeng-liu/Mean-Squared-Displacment_msd_for_vasp
+python MSD.py -p 0.5 # -p 指定步长
+```
+- 其他:  
+- MSD_tetra.py 与之用法一样，但只支持四方晶体  
+- MSD_Liujiapeng.py 该脚本来源于:  
+> https://github.com/jiapeng-liu/Mean-Squared-Displacment_msd_for_vasp  
 ---
   
 4. chgdiff.py  
@@ -218,7 +218,7 @@ python PlotCohp.py
 - 环境：python, 需要安装numpy,ase  
 ``` shell
 pip3 install numpy  
-pip3 install ase--
+pip3 install ase  
 ```
 - 用法：  
 ``` shell
