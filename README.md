@@ -214,7 +214,7 @@ python PlotCohp.py
 ---
 
 10. AveBondLen.py  
-- 描述：计算晶体所有成键原子间的平均键长  
+- 描述：按照成键种类计算其平均键长，同时计算所有成键对的平均键长
 - 环境：python, 需要安装numpy,ase  
 ``` shell
 pip3 install numpy  

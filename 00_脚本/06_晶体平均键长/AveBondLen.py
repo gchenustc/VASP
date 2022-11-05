@@ -4,6 +4,7 @@ from ase.io.pov import get_bondpairs
 from ase.calculators.vasp import Vasp
 from ase.build.supercells import make_supercell
 import numpy as np
+import time
 """
 描述: vasp提供CONTCAR即可
 
@@ -15,6 +16,7 @@ import numpy as np
 python AveBoundLen.py
 ```
 """
+start_time = time.perf_counter()
 
 #calc = Vasp(restart=True, directory=".")
 #atoms = calc.get_atoms()
@@ -35,11 +37,24 @@ bondpairs:
 (1, 31, array([0, 0, 0])),....]
 """
 
-dis_list = []
+dis_list = {}
 for a0,a1,index in bondpairs:
     # 过滤超过一个周期的原子(为什么减1？因为Python索引从0开始)
     if a0>=n_atoms-1 or a1>=n_atoms-1:
         continue
     dis = atoms.get_distance(a0,a1)
-    dis_list.append(dis)
-print("平均键长:",np.array(dis_list).mean())
+    key = '-'.join(sorted([atoms[a0].symbol,atoms[a1].symbol]))
+    dis_list[key] = dis_list.setdefault(key, []) + [dis]
+
+ave = 0
+print("average bond length per kind:\n")
+for key,value in dis_list.items():
+    mean_ = np.array(value).mean()
+    ave += mean_
+    print(f"{key}: {mean_}")
+
+print()
+
+print("average bond for all bondpairs:", ave/len(dis_list))
+time_cost = time.perf_counter() - start_time
+print("---- Time used: %.4f s ----" % time_cost)
