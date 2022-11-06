@@ -47,14 +47,17 @@ for a0,a1,index in bondpairs:
     dis_list[key] = dis_list.setdefault(key, []) + [dis]
 
 ave = 0
-print("average bond length per kind:\n")
+n_total = sum(map(lambda x:len(x),dis_list.values()))
+print(n_total)
+print("average per kind:\n")
 for key,value in dis_list.items():
     mean_ = np.array(value).mean()
-    ave += mean_
+    #print(n_total, value)
+    ave += mean_ * (len(value)/n_total)
     print(f"{key}: {mean_}")
 
 print()
 
-print("average bond for all bondpairs:", ave/len(dis_list))
+print("average for all:", ave)
 time_cost = time.perf_counter() - start_time
 print("---- Time used: %.4f s ----" % time_cost)
