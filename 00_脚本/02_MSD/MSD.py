@@ -3,7 +3,7 @@ Created on 2022-11-4
 author: gchen
 Contact: gchenn@mail.ustc.edu.cn
 introductions:
-must install numpy, ase, matplotlib for python3
+msd for npt ensemble, must install numpy, ase, matplotlib for python3
 ```
 pip install numpy,ase,matplotlib
 ```
@@ -73,7 +73,7 @@ def judge_period_atoms(before_pos,after_pos,cons,record):
         record[:,i] += np.where(pos_diff > 0.5,-1,0)
         
         
-def calibration_pos(pos,cons,record):
+def calibration_pos(pos,record):
     """根据周期性边界条件的表格校准位置"""
     for i in range(3): #3d
         pos[:,i] = pos[:,i] + record[:,i]
@@ -132,8 +132,8 @@ if __name__ == "__main__":
     over_boundary_record = np.zeros((n_atoms_total,3)) 
 
     pos_bak=None # 每一个循环中上一步的位置坐标
-    cons = xdatcar_0.cell  # 晶格常数
     for n_step,atoms in enumerate(xdatcar):
+        cons = atoms.cell  # 每一步的晶格常数
         pos = car2fra(atoms.get_positions(), cons)
         
         if n_step != 0:
@@ -143,10 +143,9 @@ if __name__ == "__main__":
         pos_bak = pos.copy() #pre_pos = xdatcar[n_step-1].get_positions()
 
         # 校准位置
-        pos = calibration_pos(pos,cons,over_boundary_record)
-        #over_boundary_record = np.zeros((n_atoms_total,3)) #初始化
-        
+        pos = calibration_pos(pos,over_boundary_record)
         pos_car = fra2car(pos, cons)
+
         msd_list_append = []
         msd_list_append.append((n_step+1)*optim) #输出当前时间
         msd_list_append.append(calc_msd(pos_car,xdatcar_0.get_positions(),3)) #输出总msd
@@ -154,7 +153,6 @@ if __name__ == "__main__":
         msd_list_append.extend(calc_msd(pos_car,xdatcar_0.get_positions(),3,list(atoms_info_dict.values()))) #输出pmsd
         msd_list  = np.vstack([msd_list,msd_list_append])
         
-    #     if n_step>=10: break
     np.savetxt("msd.out",msd_list,fmt="%s")
     plot()  #绘图
 
