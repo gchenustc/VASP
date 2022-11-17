@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
 A script to make supercell and find atomic distance
+用法： 
+python .\3_SuperCell.py -c POSCAR -d --dim "2 0 0 0 2 0 0 0 2" # 扩222的胞
+python SuperCell.py -c POSCAR -d --dim '2 2 2' # 扩222的胞
 """
 
 from __future__ import print_function

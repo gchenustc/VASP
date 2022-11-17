@@ -84,7 +84,7 @@ python kpGen.py -c POSCAR -r 0.2 -s 0.01 -o KPOINTS # -r: 相邻k点的距离(un
 
 ## 结构变换脚本
 1. MoveAlongAxis.py
-- 描述：沿着x,y,z轴整体移动原子
+- 描述：沿着x,y,z轴（笛卡尔坐标）整体移动原子
 - 环境：python, 需要安装numpy,ase,spglib
 ``` shell
 pip3 install numpy
@@ -93,8 +93,9 @@ pip3 install spglib
 ```
 - 用法：
 ``` shell
-python MoveAlongAxis.py -c POSCAR -m 0 0 1 # 将POSCAR沿着z轴移动1A
-python MoveAlongAxis.py -c POSCAR1 POSCAR2 -m 0 0 1 # 同时传入多个POSCAR
+python *.py -c POSCAR1 POSCAR2 -m 0 0 1 # 将POSCAR1和POSCAR2沿着z轴（Cartesian坐标）移动1A，可以不传入-c，默认文件名为POSCAR
+python *.py -c POSCAR1 POSCAR2 -d direct -m 0 0 1 -v # -d指移动mode，沿着c轴（分数坐标）移动
+python *.py -c POSCAR1 POSCAR2 -d direct -p -m 0 0 0.1 -v # -p打开后，按照胞长的比例移动，-p参数需要-d direct
 ```
 ---
 

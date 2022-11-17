@@ -13,8 +13,9 @@ import numpy as np
 """
 description: Move atoms along the specific axis
 usage:
-python *.py -c POSCAR1 POSCAR2 -m 0 0 1 # 将POSCAR1和POSCAR2沿着c轴移动1A，可以不传入-c，默认文件名为POSCAR
-python *.py -c POSCAR1 POSCAR2 -m 0 0 1 -v # -v 可视化处理后的图像
+python *.py -c POSCAR1 POSCAR2 -m 0 0 1 # 将POSCAR1和POSCAR2沿着z轴（Cartesian坐标）移动1A，可以不传入-c，默认文件名为POSCAR
+python *.py -c POSCAR1 POSCAR2 -d direct -m 0 0 1 -v # -d指移动mode，沿着c轴（分数坐标）移动
+python *.py -c POSCAR1 POSCAR2 -d direct -p -m 0 0 0.1 -v # -p打开后，按照胞长的比例移动，-p参数需要-d direct
 """
 
 def is_number(s):
@@ -32,8 +33,10 @@ def is_number(s):
 parser = argparse.ArgumentParser(description="Move atoms along the specific axis")
 parser.add_argument('-c','--POSCAR', default=["POSCAR"], nargs="+", help="Specify the POSCAR file")
 parser.add_argument('-v','--visualize', action="store_true", default=False, help='Use ASE-GUI to visualize structure (Default=False)')
+parser.add_argument('-d','--mode', action="store", default="cartesian", choices=["c","C","D","d","direct","cartesian","Direct","Cartesian"], help='move mode')
+parser.add_argument('-p','--prop', action="store_true", help='switch moved by percentage')
 parser.add_argument('-m','--moving', required=True, nargs=3, help="Specify the length moved along corresponding basis vetor(x,y,z)")
-prm = parser.parse_args()
+prm = parser.parse_args("-c POSCAR POSCAR1 -d d -m 0 0 10".split())
 
 # Starting
 starttime = time.time()
@@ -55,13 +58,25 @@ numbers = [pos.numbers for pos in i_poscars_r]
 positions = [pos.positions for pos in i_poscars_r]
 lattice = [pos.cell for pos in i_poscars_r]
 symbols = [pos.get_chemical_symbols() for  pos in i_poscars_r]
+# 胞长
+cell_len = [np.linalg.norm(pos.get_cell(), axis=0) for pos in i_poscars_r]
 
 if prm.visualize==True:
     view(i_poscars_r)
-    
+
 # moving operate
-for position in positions:
-    position += moving
+if prm.mode[0].lower() == "d":
+    if not prm.prop:
+        moving = np.array(moving)/np.array(cell_len)
+    [pos.set_scaled_positions(pos.get_scaled_positions()+moving[index]) for index,pos in enumerate(i_poscars_r)]
+
+elif prm.mode[0].lower() == "c": 
+    for position in positions:
+        position += moving
+
+else:
+    print("input error")
+    raise InterruptedError
     
 # Atom class
 atoms = [ase.Atoms(numbers=n, cell=c, positions=p, pbc=True) for n,c,p in zip(numbers, lattice, positions)]
