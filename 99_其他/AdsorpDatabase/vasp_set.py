@@ -1,0 +1,60 @@
+from ase.calculators.vasp import Vasp
+# vasp设置
+vasp_scf = Vasp(\
+    #directory="./workdir", # vasp的工作目录
+    txt="./out.log", # vasp输出日志
+    xc="pbe",
+    npar=8,
+    lreal="auto",
+    istart=0,
+    icharg=2,
+    prec="Accurate",
+    ibrion=-1,
+    #isif=3,
+    #nsw=500,
+    #potim=0.5,
+    encut=520,
+    nelm=100,
+    nelmin=6,
+    ediff=1E-6,
+    #ediffg=-1E-3,
+    ismear=0,
+    sigma=0.05,
+    lwave=False,
+    lcharg=False,
+    kpts = [5,5,2], # K点
+    gamma = False, # False为MP点，True取Gamma点
+    algo = "FAST",
+    #ialgo=38,
+    setups='recommended',\
+    )
+
+vasp_relax = Vasp(
+    #directory="./workdir", # 计算路径
+    txt="./out.log", # vasp输出文件名
+    xc="pbe",
+    npar=8,
+    lreal="auto",
+    #isym=0,
+    istart=0,
+    icharg=2,
+    prec="Accurate",
+    ibrion=2,
+    isif=2,
+    nsw=300,
+    potim=0.5,
+    encut=520,
+    nelm=60,
+    nelmin=6,
+    ediff=1E-6,
+    ediffg=-1E-3,
+    ismear=0,
+    sigma=0.05,
+    lwave=False,
+    lcharg=False,
+    kpts = [5,5,2],
+    gamma = False,
+    algo = "FAST",
+    #ialgo=38,
+    setups='recommended',
+    )
