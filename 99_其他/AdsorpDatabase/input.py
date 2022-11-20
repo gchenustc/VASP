@@ -18,25 +18,27 @@ if __name__ == "__main__":
     # 数据库路径
     db_path = "100b-8vac-H.db"
 
-    init_data(atoms_tem=atoms_tem, adsorb_element="H", adsorb_pos_list=adsorb_pos_list, db_path=db_path)
-    scf(vasp_scf, db_path, num_list=[1,100,100,100,100,100,100,100,100]) # num_list为吸附0，1，2...个结构的计算数量
-    # sr(vasp_relax, db_path, num_list=[0,2,2,2,2])
+    # init_data(atoms_tem=atoms_tem, adsorb_element="H", adsorb_pos_list=adsorb_pos_list, db_path=db_path)
+    # scf(vasp_scf, db_path, num_list=[0,0,0,0,0,0,0,0,0], adsorb_info={"H":1}) # num_list为吸附0，1，2...个结构的计算数量
+    # sr(vasp_relax, db_path, num_list=[0,0,0,0,0,0,0,0,0], adsorb_info={"H":1})
+    # rmrelax(db_path, id=1)
     # scf_id(vasp_scf, db_path, id=1)
-    # sr_id(vasp_relax, db_path, id=2)
-    # freeze_id(db_path, 2)
-    # unfreeze_id(db_path, 2)
+    # sr_id(vasp_relax, db_path, id=1)
+    # freeze_id(db_path, id=1)
+    # unfreeze_id(db_path, id=1)
     # view_freeze_stru(db_path)
     # view_ori_stru(db_path)
     # view_scf_stru(db_path, sort_way="adsorb_e", single_adsorb_element_energy=-3.38794825) # -3.38794825为vasp计算的H2的单个H的能量
     # view_relax_stru(db_path)
-    # view_strus(db_path, id_list=[3,12,13,1])
-    # view_stru("id=12")
+    # view_strus(db_path, "H=2")
+    # view_strus_id(db_path, id_list=[1,2,3])
+    # rmscf(db_path, id=88)
+    # rmrelax(db_path, id=76)
     # write_id(db_path, id=[7], format="vasp")
-    # rmscf(db_path, id=1)
-    # rmrelax(db_path, id=1)
+
     endTime = time.time()
     runtime = endTime - startTime
     logging.info("=============== --- ==============")
     logging.info("End of calculation.")
     logging.info("Program was running for %d min %d s." % (runtime/60, runtime%60))
-    logging.info("=============== end ==============")
+    logging.info("=============== end ==============\n")
