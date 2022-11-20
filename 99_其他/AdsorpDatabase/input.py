@@ -19,8 +19,8 @@ if __name__ == "__main__":
     db_path = "100b-8vac-H.db"
 
     # init_data(atoms_tem=atoms_tem, adsorb_element="H", adsorb_pos_list=adsorb_pos_list, db_path=db_path)
-    # scf(vasp_scf, db_path, num_list=[100,100,100,100,100,100,100,100,100], adsorb_info={"H":1}) # num_list为吸附0，1，2...个结构的计算数量
-    # sr(vasp_relax, db_path, num_list=[2,2,2,2,2,2,2,2,2], adsorb_info={"H":1})
+    # scf(EMT(), db_path, num_list=[1,10,10,10,10,10,10,10,1], adsorb_info={"H":1}) # num_list为吸附0，1，2...个结构的计算数量
+    # sr(EMT(), db_path, num_list=[2,2,2,2,2,2,2,2,2], adsorb_info={"H":1})
     # rmrelax(db_path, id=1)
     # scf_id(vasp_scf, db_path, id=1)
     # sr_id(vasp_relax, db_path, id=1)
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # view_freeze_stru(db_path)
     # view_ori_stru(db_path)
     # view_scf_strus(db_path, energy_sort_way="total", single_adsorb_element_energy=-3.38794825) # -3.38794825为vasp计算的H2的单个H的能量，不包含未收敛的结构
-    # view_relax_strus(db_path, energy_sort_way="adsorb_e", single_adsorb_element_energy=-3.38794825) # 不包含未收敛的结构
+    view_relax_strus(db_path, energy_sort_way="adsorb_e", single_adsorb_element_energy=-3.38794825) # 不包含未收敛的结构
     # view_relax_stru_total(db_path) # 查看所有的不包含冻结的其他所有结构优化的结构
     # view_strus(db_path, "H=2")
     # view_strus_id(db_path, id_list=[1,2,3])

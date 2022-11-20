@@ -368,6 +368,11 @@ def scf_id(calc, db_path, id):
 
     mydb = db.connect(db_path)
     select = mydb.get(id=id)
+
+    if select.ori_stru_id == -1:
+        logging.info(f"id={select.id}的结构已经被冻结,请先解冻\n")
+        return
+
     try:
         bool_scf = select.scf
         if not bool_scf:
@@ -435,12 +440,16 @@ def sr_id(calc, db_path, id, bfgs=True):
     mydb = db.connect(db_path)
     select = mydb.get(id=id)
 
+    if select.ori_stru_id == -1:
+        logging.info(f"id={select.id}的结构已经被冻结,请先解冻\n")
+        return
+
     try:
         select_relax_target_id = select.relax_target_id
     except Exception:
         select_relax_target_id = -1
 
-    if (not select.relaxed) or (select.ori_stru_id != 0 and select.relaxed_converg == False and select_relax_target_id<=0):
+    if (not select.relaxed) or (select.ori_stru_id > 0 and select.relaxed_converg == False and select_relax_target_id<=0):
         logging.info(f"id={select.id}开始进行relax")
         atoms = select.toatoms()
         atoms.calc = calc
@@ -594,16 +603,28 @@ def _view_strus_sorted_by_energy(db_path, select, energy_sort_way="total", singl
     if energy_sort_way == "total":
         selected_list = list(mydb.select(select))
         if not selected_list:
-            logging.info("您还没有进行任何含有吸附物的scf计算")
+            logging.info("没有符合条件的结构")
             return
 
         row_sorted = sorted(selected_list, key=lambda x: x.energy)
+
+        pre_origin_strus_id = []
+        for row in row_sorted:
+            try:
+                pre_row = mydb[row.ori_stru_id]
+                while pre_row.ori_stru_id != 0:
+                    row = mydb[row.ori_stru_id]
+                    pre_row = mydb[row.ori_stru_id]
+                pre_origin_strus_id.append(row.ori_stru_id)
+            except Exception:
+                pre_origin_strus_id.append(row.ori_stru_id)
+
         atoms = list(map(lambda x: x.toatoms(), row_sorted))
 
         # 打印
-        logging.info("No.  id     energy")
+        logging.info("No.   id     energy    ori_stru_id    pre_ori_stru_id")  # ori_stru_id是上一个结构的id， pre_ori_stru_id是init结构id
         for index, row in enumerate(row_sorted):
-            logging.info("%-6d%-6d%-6.4f" % (index+1, row.id, row.energy))
+            logging.info("%-6d%-6d%8.4f%15s%17s" % (index+1, row.id, row.energy, row.ori_stru_id, pre_origin_strus_id[index]))
 
     if energy_sort_way == "adsorb_e":
         try:
@@ -625,10 +646,21 @@ def _view_strus_sorted_by_energy(db_path, select, energy_sort_way="total", singl
                                  n_adsorbs * single_adsorb_element_energy) / n_adsorbs
         row_sorted = sorted(selected_list, key=lambda x: x.ave_energy)
 
-        logging.info("No.  id    adsorb_energy    ori_stru_id")
+        pre_origin_strus_id = []
+        for row in row_sorted:
+            try:
+                pre_row = mydb[row.ori_stru_id]
+                while pre_row.ori_stru_id != 0:
+                    row = mydb[row.ori_stru_id]
+                    pre_row = mydb[row.ori_stru_id]
+                pre_origin_strus_id.append(row.ori_stru_id)
+            except Exception:
+                pre_origin_strus_id.append(row.ori_stru_id)
+
+        logging.info("No.   id    adsorb_energy    ori_stru_id    pre_ori_stru_id")
         # 打印排序后的信息 - 方便从数据库中找结构
         for index, row in enumerate(row_sorted):
-            logging.info("%-6d%-6d%-6.4f%7s" % (index+1, row.id, row.ave_energy, row.ori_stru_id))
+            logging.info("%-6d%-6d%8.4f%15s%17s" % (index+1, row.id, row.ave_energy, row.ori_stru_id, pre_origin_strus_id[index]))
         atoms = list(map(lambda x: x.toatoms(), row_sorted))
     logging.info("")
     view(atoms)
