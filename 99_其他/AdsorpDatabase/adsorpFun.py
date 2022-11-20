@@ -254,7 +254,7 @@ def scf(calc, db_path, num_list, adsorb_info={"H": 1}):
                             database.update(
                                 id=row.id, atoms=atoms, scf=True, converg=True)
                     else:
-                        database.update(id=row.id, atoms=atoms, scf=True)
+                        database.update(id=row.id, atoms=atoms, scf=True, converg=True)
                     logging.info(f"id={row.id}的结构scf成功")
                     n_clacs += 1
                 except Exception:
@@ -388,7 +388,7 @@ def scf_id(calc, db_path, id):
                         mydb.update(id=select.id, atoms=atoms,
                                     scf=True, converg=False)
                 else:
-                    mydb.update(id=select.id, atoms=atoms, scf=True)
+                    mydb.update(id=select.id, atoms=atoms, scf=True, converg=True)
                 logging.info(f"id={select.id}的结构scf成功\n")
             except Exception:
                 logging.info(f"id={select.id}的结构scf失败，请查看计算日志\n")
@@ -582,17 +582,17 @@ def view_freeze_stru(db_path):
     logging.info("")
 
 
-def view_scf_stru(db_path, sort_way="total", single_adsorb_element_energy=None):
+def _view_strus_sorted_by_energy(db_path, select, energy_sort_way="total", single_adsorb_element_energy=None):
     """
-    查看进行过scf计算的所有结构。
+    查看指定条件的所有结构。
     结构出现的顺序可以按照总能量排序(sort_way="total")，也可以按照吸附能(sort_way="adsorb_e")，按照吸附能排序需要给出\
     single_adsorb_element_energy，即吸附物进行独立计算得到的单个原子的能量，EMT()计算H2得到单个H的能量为0.5352706311
     """
     logging.info("--------------- view scf stru ---------------")
     mydb = db.connect(db_path)
 
-    if sort_way == "total":
-        selected_list = list(mydb.select("scf=True, ori_stru_id=0"))
+    if energy_sort_way == "total":
+        selected_list = list(mydb.select(select))
         if not selected_list:
             logging.info("您还没有进行任何含有吸附物的scf计算")
             return
@@ -605,16 +605,17 @@ def view_scf_stru(db_path, sort_way="total", single_adsorb_element_energy=None):
         for index, row in enumerate(row_sorted):
             logging.info("%-6d%-6d%-6.4f" % (index+1, row.id, row.energy))
 
-    if sort_way == "adsorb_e":
+    if energy_sort_way == "adsorb_e":
         try:
             tem_energy = mydb.get(id=1).energy  # 获得模板结构的能量
         except AttributeError:
             logging.info("需要先对模板结构（未吸附物质）进行单点计算")
             return
 
-        selected_list = list(mydb.select("scf=True, ori_stru_id=0, id!=1"))
+        n_atoms_tem = len(list(mydb.select(id=1))[0].toatoms().numbers) # 模板结构的原子数
+        selected_list = list(mydb.select(f"{select}, natoms!={n_atoms_tem}"))
         if not selected_list:
-            logging.info("您还没有进行任何的scf计算")
+            logging.info("没有找到相关结构")
             return
 
         for select in selected_list:
@@ -624,16 +625,19 @@ def view_scf_stru(db_path, sort_way="total", single_adsorb_element_energy=None):
                                  n_adsorbs * single_adsorb_element_energy) / n_adsorbs
         row_sorted = sorted(selected_list, key=lambda x: x.ave_energy)
 
-        logging.info("No.  id    adsorb_energy")
+        logging.info("No.  id    adsorb_energy    ori_stru_id")
         # 打印排序后的信息 - 方便从数据库中找结构
         for index, row in enumerate(row_sorted):
-            logging.info("%-6d%-6d%-6.4f" % (index+1, row.id, row.ave_energy))
+            logging.info("%-6d%-6d%-6.4f%7s" % (index+1, row.id, row.ave_energy, row.ori_stru_id))
         atoms = list(map(lambda x: x.toatoms(), row_sorted))
     logging.info("")
     view(atoms)
 
 
-def view_relax_stru(db_path):
+def view_relax_stru_total(db_path):
+    """
+    查看结构优化的不包含已经冻结的所有结构
+    """
     logging.info("--------------- view relax stru ---------------")
     mydb = db.connect(db_path)
     selected = list(mydb.select("relaxed=True, ori_stru_id>0"))
@@ -652,3 +656,14 @@ def view_relax_stru(db_path):
                      (index+1, row.id, row.energy, row.ori_stru_id))
     logging.info("")
     view(atoms)
+
+
+def view_scf_strus(db_path, select="scf=True, ori_stru_id=0, converg=True", energy_sort_way="total", single_adsorb_element_energy=None):
+    _view_strus_sorted_by_energy(db_path, select, energy_sort_way, single_adsorb_element_energy)
+    
+
+def view_relax_strus(db_path, select="relaxed=True, ori_stru_id>0, relaxed_converg=True", energy_sort_way="total", single_adsorb_element_energy=None):
+    """
+    不包含为收敛的结构
+    """
+    _view_strus_sorted_by_energy(db_path, select, energy_sort_way, single_adsorb_element_energy)
