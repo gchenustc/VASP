@@ -314,10 +314,12 @@ def scf(calc, db_path, num_list, adsorb_info={"H": 1}):
 
 
 # num_list:[2,2...] 吸附0个，1个...的结构都取两个
-def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=False, bfgs=True):
+def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=False, only_unconvergence=True, bfgs=True):
     """
     adsorb_kind: 如果吸附的是CO2，则 adsorb_kind = {"C":1, "O":2}
     num_list: 指定进行自洽计算地结构个数，列表索引的第一个是不吸附的结构的选取数量，第二个是吸附一个group的结构的选取数量，以此类推。
+    unconvergence_selected: 选中包含未收敛的结构
+    only_unconvergence: 如果unconvergence_selected=True，此参数有效，只选中未收敛的结构
     """
     database = db.connect(db_path)
     if isinstance(calc, Vasp):
@@ -365,7 +367,10 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
                     rm_list.append(row)
                 for dropped in rm_list:
                     row_list_extent.remove(dropped)
-            row_list.extend(row_list_extent)
+            if only_unconvergence:
+                row_list = row_list_extent
+            else:
+                row_list.extend(row_list_extent)
 
         if len(row_list) < str_num:
             str_num_old = str_num
@@ -672,13 +677,7 @@ def view_strus_id(db_path, id_list):
 
 def view_freeze_stru(db_path):
     logging.info("--------------- view freeze stru ---------------")
-    selected_list = _view_strus(db_path, ori_stru_id=-1)[0]
-    # 打印信息
-    logging.info("No.  id  is_scf  is_relaxed")
-    for index, row in enumerate(selected_list):
-        logging.info("%-5d%-5d%-8s%-8s" %
-                     (index+1, row.id, row.scf, row.relaxed))
-    logging.info("")
+    view_strus(db_path, ori_stru_id=-1)
 
 
 def _view_strus_sorted_by_energy(db_path, select, energy_sort_way="total", single_adsorb_element_energy=None):
