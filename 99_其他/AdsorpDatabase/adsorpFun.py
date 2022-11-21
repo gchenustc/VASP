@@ -752,6 +752,18 @@ def view_relax_stru_total(db_path):
     logging.info("--------------- view relax stru ---------------")
     mydb = db.connect(db_path)
     selected = list(mydb.select("relaxed=True, ori_stru_id>0"))
+    
+    # pre_origin_strus_id
+    pre_origin_strus_id = []
+    for row in selected:
+        try:
+            pre_row = mydb[row.ori_stru_id]
+            while pre_row.ori_stru_id != 0:
+                row = mydb[row.ori_stru_id]
+                pre_row = mydb[row.ori_stru_id]
+            pre_origin_strus_id.append(row.ori_stru_id)
+        except Exception:
+            pre_origin_strus_id.append(row.ori_stru_id)
 
     # 排除已经冻结的结构
     rm_list = [row for row in selected if _isfreeze(db_path, row)]
@@ -761,10 +773,10 @@ def view_relax_stru_total(db_path):
     atoms = list(map(lambda x: x.toatoms(), selected))
 
     # 打印排序后的信息 - 方便从数据库中找结构
-    logging.info("No.  id     energy    ori_stru_id")
+    logging.info("No.  id     energy    ori_stru_id    pre_ori_stru_id    max_force")
     for index, row in enumerate(selected):
-        logging.info("%-6d%-6d%-6.5f%7s" %
-                     (index+1, row.id, row.energy, row.ori_stru_id))
+        logging.info("%-5d%-5d%8.4f%9s%16s%19.4f" %
+                     (index+1, row.id, row.energy, row.ori_stru_id, pre_origin_strus_id[index], row.fmax))
     logging.info("")
     view(atoms)
 

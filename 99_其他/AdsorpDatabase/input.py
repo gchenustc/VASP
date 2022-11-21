@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # view_ori_stru(db_path)
     # view_scf_strus(db_path, energy_sort_way="adsorb_e", single_adsorb_element_energy=-3.38794825) # -3.38794825为vasp计算的H2的单个H的能量，不包含未收敛的结构
     # view_relax_strus(db_path, energy_sort_way="total", single_adsorb_element_energy=-3.38794825) # 不包含未收敛的结构
-    # view_relax_stru_total(db_path) # 查看所有的不包含冻结的其他所有结构优化的结构
+    view_relax_stru_total(db_path) # 查看所有的不包含冻结的其他所有结构优化的结构
     # view_strus(db_path, "H=2")
     # view_strus_id(db_path, id_list=[1,2])
     # rmscf(db_path, id=1)
