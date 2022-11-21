@@ -725,16 +725,7 @@ def _view_strus_sorted_by_energy(db_path, select, energy_sort_way="total", singl
                                  n_adsorbs * single_adsorb_element_energy) / n_adsorbs
         row_sorted = sorted(selected_list, key=lambda x: x.ave_energy)
 
-        pre_origin_strus_id = []
-        for row in row_sorted:
-            try:
-                pre_row = mydb[row.ori_stru_id]
-                while pre_row.ori_stru_id != 0:
-                    row = mydb[row.ori_stru_id]
-                    pre_row = mydb[row.ori_stru_id]
-                pre_origin_strus_id.append(row.ori_stru_id)
-            except Exception:
-                pre_origin_strus_id.append(row.ori_stru_id)
+        pre_origin_strus_id = [_get_pre_ori_id(db_path, row) for row in row_sorted]
 
         logging.info("No.   id    adsorb_energy    ori_stru_id    pre_ori_stru_id")
         # 打印排序后的信息 - 方便从数据库中找结构
@@ -752,18 +743,9 @@ def view_relax_stru_total(db_path):
     logging.info("--------------- view relax stru ---------------")
     mydb = db.connect(db_path)
     selected = list(mydb.select("relaxed=True, ori_stru_id>0"))
-    
+
     # pre_origin_strus_id
-    pre_origin_strus_id = []
-    for row in selected:
-        try:
-            pre_row = mydb[row.ori_stru_id]
-            while pre_row.ori_stru_id != 0:
-                row = mydb[row.ori_stru_id]
-                pre_row = mydb[row.ori_stru_id]
-            pre_origin_strus_id.append(row.ori_stru_id)
-        except Exception:
-            pre_origin_strus_id.append(row.ori_stru_id)
+    pre_origin_strus_id = [_get_pre_ori_id(db_path, row) for row in selected]
 
     # 排除已经冻结的结构
     rm_list = [row for row in selected if _isfreeze(db_path, row)]
