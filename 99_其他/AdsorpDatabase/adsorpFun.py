@@ -218,29 +218,6 @@ def rmrelax(db_path, id, rmrange="all"):
 
     mydb.update(id=pre_ori_id, relax_target_id=-1)
 
-    """
-    if row.relaxed:
-        if row.ori_stru_id == 0:
-            mydb.update(id=id, relaxed=False, relax_target_id=-1)
-            rmrelax(db_path, row.relax_target_id)
-        if row.ori_stru_id != 0:
-            id_dele = [row.id]
-            if mydb[row.ori_stru_id].ori_stru_id == 0:
-                mydb.update(row.ori_stru_id, relax_target_id = -1, relaxed=False)
-            else:
-                mydb.update(row.ori_stru_id, relax_target_id = -1)
-            try:
-                while row.relax_target_id:
-                    id_dele.append(row.relax_target_id)
-                    row = mydb[row.relax_target_id]
-            except Exception:
-                for _id in id_dele:
-                    del mydb[_id]
-                    logging.info(f"成功删除id={_id}的relax结果\n")
-    else:
-        logging.info("该id没有进行relax计算\n")
-    """
-
 
 def scf(calc, db_path, num_list, adsorb_info={"H": 1}):
     """
@@ -255,7 +232,7 @@ def scf(calc, db_path, num_list, adsorb_info={"H": 1}):
         calc.directory = ("workdir")
     logging.info("--------------- 开始批量 scf ---------------")
     logging.info(
-        f"1,2,3...个吸附物结构的scf数量: {str(num_list).strip('[]')}, 一共需要计算{sum(num_list)}个结构")
+        f"0,1,2,3...个吸附物结构的scf数量: {str(num_list).strip('[]')}, 一共需要计算{sum(num_list)}个结构")
     n_clacs = 0
 
     for ad_num, str_num in enumerate(num_list):
@@ -332,7 +309,7 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
     logging.info("--------------- 开始批量 relax ---------------")
     logging.info(f">>> 是否包含对未收敛的结构进行计算: {unconvergence_selected} <<<")
     logging.info(
-        f"1,2,3...个吸附物结构的relax数量: {str(num_list).strip('[]')}, 一共需要计算{sum(num_list)}个结构")
+        f"0,1,2,3...个吸附物结构的relax数量: {str(num_list).strip('[]')}, 一共需要计算{sum(num_list)}个结构")
     n_clacs = 0
 
     for ad_num, str_num in enumerate(num_list):
