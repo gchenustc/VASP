@@ -168,14 +168,57 @@ def rmscf(db_path, id):
         logging.info("该id没有进行scf计算\n")
 
 
-def rmrelax(db_path, id):
+def rmrelax(db_path, id, rmrange="all"):
     """
     删除init结构的relax的计算结果
+    rmrange: all or current; all为删除所有realx结果，rmrange是从当前id开始删除
     """
+    assert rmrange in ["all", "current"]
     logging.info("--------------- remove relax result ---------------")
+
     mydb = db.connect(db_path)
     row = mydb.get(id=id)
 
+    if _isfreeze(db_path, row):
+        logging.info(f"id={id}的结构的init结构(id={_get_pre_ori_id(db_path, row)})已经被冻结，请先解冻\n")
+        return
+
+    if row.ori_stru_id == 0:
+        rmrange = "all"
+
+    if rmrange == "all":
+        pre_ori_id = _get_pre_ori_id(db_path, row)
+        mydb.update(id=pre_ori_id, relaxed=False)
+    elif rmrange == "current":
+        pre_ori_id = row.ori_stru_id
+        if mydb.get(id=pre_ori_id).ori_stru_id == 0:
+            mydb.update(id=pre_ori_id, relaxed=False)
+    pre_ori_row = mydb.get(id=pre_ori_id)
+
+    relax_chain_id = []
+    current_row = pre_ori_row
+    while 1:
+        try:
+            current_relax_target_id = current_row.relax_target_id
+            if current_relax_target_id <= 0:
+                break
+            relax_chain_id.append(current_relax_target_id)
+            current_row = mydb.get(id=current_relax_target_id)
+        except Exception: 
+            break
+
+    if not relax_chain_id:
+        logging.info(f"该结构id={id}没有进行relax计算\n")
+        return
+
+    for id in relax_chain_id:
+        del mydb[id]
+        logging.info(f"成功删除init结构(id={pre_ori_id})的relax结构(id={id})")
+    logging.info("")
+
+    mydb.update(id=pre_ori_id, relax_target_id=-1)
+
+    """
     if row.relaxed:
         if row.ori_stru_id == 0:
             mydb.update(id=id, relaxed=False, relax_target_id=-1)
@@ -193,9 +236,10 @@ def rmrelax(db_path, id):
             except Exception:
                 for _id in id_dele:
                     del mydb[_id]
-        logging.info("成功删除relax结果\n")
+                    logging.info(f"成功删除id={_id}的relax结果\n")
     else:
         logging.info("该id没有进行relax计算\n")
+    """
 
 
 def scf(calc, db_path, num_list, adsorb_info={"H": 1}):
@@ -270,7 +314,7 @@ def scf(calc, db_path, num_list, adsorb_info={"H": 1}):
 
 
 # num_list:[2,2...] 吸附0个，1个...的结构都取两个
-def sr(calc, db_path, num_list, adsorb_info={"H": 1}, bfgs=True):
+def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=False, bfgs=True):
     """
     adsorb_kind: 如果吸附的是CO2，则 adsorb_kind = {"C":1, "O":2}
     num_list: 指定进行自洽计算地结构个数，列表索引的第一个是不吸附的结构的选取数量，第二个是吸附一个group的结构的选取数量，以此类推。
@@ -284,6 +328,7 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, bfgs=True):
         calc.directory = ("workdir")
 
     logging.info("--------------- 开始批量 relax ---------------")
+    logging.info(f">>> 是否包含对未收敛的结构进行计算: {unconvergence_selected} <<<")
     logging.info(
         f"1,2,3...个吸附物结构的relax数量: {str(num_list).strip('[]')}, 一共需要计算{sum(num_list)}个结构")
     n_clacs = 0
@@ -301,6 +346,26 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, bfgs=True):
         # ori_stru_id=0 是选取init中的结构
         row_list = list(database.select(
             f"relaxed=False, ori_stru_id=0, {adsorb_info_str}"))
+        if unconvergence_selected:
+            row_list_extent = list(database.select(
+            f"relaxed_converg=False, {adsorb_info_str}"))
+            # 去除冻结的情况
+            rm_list = [row for row in row_list_extent if _isfreeze(db_path, row)]
+            for dropped in rm_list:
+                row_list_extent.remove(dropped)
+            
+            # 去除非末端结构的情况
+            rm_list = []
+            for row in row_list_extent:
+                try:
+                    select_relax_target_id = row.relax_target_id
+                except Exception:
+                    select_relax_target_id = -1
+                if select_relax_target_id > 0:
+                    rm_list.append(row)
+                for dropped in rm_list:
+                    row_list_extent.remove(dropped)
+            row_list.extend(row_list_extent)
 
         if len(row_list) < str_num:
             str_num_old = str_num
@@ -328,19 +393,15 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, bfgs=True):
                             # 另外写入scf后的atoms
                             _id = database.write(
                                 atoms, relaxed=True, ori_stru_id=row.id, relaxed_converg=False)
-                            # 更新原始的atoms
-                            database.update(
-                                id=row.id, relaxed=True, relax_target_id=_id)
                         else:
                             _id = database.write(
                                 atoms, relaxed=True, ori_stru_id=row.id, relaxed_converg=True)
-                            database.update(
-                                id=row.id, relaxed=True, relax_target_id=_id)
                     else:
                         _id = database.write(
                             atoms, relaxed=True, ori_stru_id=row.id, relaxed_converg=True)
-                        database.update(
-                            id=row.id, relaxed=True, relax_target_id=_id)
+                    # 更新原始的atoms
+                    database.update(
+                        id=row.id, relaxed=True, relax_target_id=_id)
                     logging.info(f"id={row.id}的结构relax成功")
                     n_clacs += 1
                 except Exception:
@@ -369,8 +430,10 @@ def scf_id(calc, db_path, id):
     mydb = db.connect(db_path)
     select = mydb.get(id=id)
 
-    if select.ori_stru_id == -1:
-        logging.info(f"id={select.id}的结构已经被冻结,请先解冻\n")
+    # 检查init结构是否冻结
+    pre_ori_id = _get_pre_ori_id(db_path, select)
+    if _isfreeze(db_path, select):
+        logging.info(f"id={select.id}的结构的init结构(id={pre_ori_id})已经被冻结,请先解冻\n")
         return
 
     try:
@@ -440,8 +503,9 @@ def sr_id(calc, db_path, id, bfgs=True):
     mydb = db.connect(db_path)
     select = mydb.get(id=id)
 
-    if select.ori_stru_id == -1:
-        logging.info(f"id={select.id}的结构已经被冻结,请先解冻\n")
+    pre_ori_id = _get_pre_ori_id(db_path, select)
+    if _isfreeze(db_path, select):
+        logging.info(f"id={select.id}的结构的init结构(id={pre_ori_id})已经被冻结,请先解冻\n")
         return
 
     try:
@@ -467,19 +531,15 @@ def sr_id(calc, db_path, id, bfgs=True):
                     # 另外写入scf后的atoms
                     _id = mydb.write(
                         atoms, relaxed=True, ori_stru_id=select.id, relaxed_converg=False)
-                    # 更新原始的atoms
-                    mydb.update(
-                        id=select.id, relaxed=True, relax_target_id=_id)
                 else:
                     _id = mydb.write(
                         atoms, relaxed=True, ori_stru_id=select.id, relaxed_converg=True)
-                    mydb.update(
-                        id=select.id, relaxed=True, relax_target_id=_id)
             else:
                 _id = mydb.write(
-                    atoms, relaxed=True, ori_stru_id=select.id, relaxed_converg=True)
-                mydb.update(
-                    id=select.id, relaxed=True, relax_target_id=_id)
+                    atoms, relaxed=True, ori_stru_id=select.id, relaxed_converg=False)
+            # 更新原始的atoms
+            mydb.update(
+                id=select.id, relaxed=True, relax_target_id=_id)
             logging.info(f"id={select.id}的结构relax成功\n")
         except Exception:
             logging.info(f"id={select.id}的结构relax失败，请查看计算日志\n")
@@ -489,31 +549,61 @@ def sr_id(calc, db_path, id, bfgs=True):
         logging.info("该结构已经进行过relax或者已经收敛\n")
 
 
+def _get_pre_ori_id(db_path, row):
+    """返回原始init结构的id"""
+    mydb = db.connect(db_path)
+    try:
+        pre_row = mydb[row.ori_stru_id]
+        while pre_row.ori_stru_id != [0, -1]:
+            row = mydb[row.ori_stru_id]
+            pre_row = mydb[row.ori_stru_id]
+        return row.ori_stru_id
+    except Exception:
+        return row.id
+
+
+def _isfreeze(db_path, row):
+    """追踪init结构，如果它冻结了，返回True，否则返回False"""
+    mydb = db.connect(db_path)
+    pre_ori_id = _get_pre_ori_id(db_path, row)
+    pre_ori_row = mydb.get(id=pre_ori_id)
+    judge = pre_ori_row.ori_stru_id
+    if judge == 0:
+        return False
+    elif judge == -1:
+        return True
+    else:
+        logging.warning(f"出现一个错误，请检查源文件\n")
+
+
 def freeze_id(db_path, id):
     """
-    对指定id的结构进行冻结，冻结的结构将不进行scf和relax的计算，也不进行展示(ori_stru_id=-1)。
-    可使用view_freeze_stru(db_path)函数查看冻结的结构
+    对指定id的结构的init结构进行冻结，冻结的结构将不进行scf和relax的计算，也不进行展示，标记为ori_stru_id=-1。
     """
     logging.info("--------------- freeze by id ---------------")
     mydb = db.connect(db_path)
-    if mydb.get(id=id).ori_stru_id == 0:
-        mydb.update(id=id, ori_stru_id=-1)
-        logging.info(f"id={id}冻结成功\n")
+    row = mydb.get(id=id)
+    pre_ori_id = _get_pre_ori_id(db_path, row)
+    if isfreeze := _isfreeze(db_path, row):
+        logging.warning(f"id={id}的init结构(id={pre_ori_id})已经被冻结\n")
     else:
-        logging.warning(f"id={id}不是init产生的结构或者已经被冻结\n")
+        mydb.update(id=pre_ori_id, ori_stru_id=-1)
+        logging.info(f"id={id}的init结构(id={pre_ori_id})冻结成功\n")
 
 
 def unfreeze_id(db_path, id):
     """
-    对指定id的结构进行解冻(ori_stru_id=0)
+    对指定id的结构的init结构进行解冻
     """
     logging.info("--------------- unfreeze by id ---------------")
     mydb = db.connect(db_path)
-    if mydb.get(id=id).ori_stru_id == -1:
-        mydb.update(id=id, ori_stru_id=0)
-        logging.info(f"id={id}解冻成功\n")
+    row = mydb.get(id=id)
+    pre_ori_id = _get_pre_ori_id(db_path, row)
+    if isfreeze := _isfreeze(db_path, row):
+        mydb.update(id=pre_ori_id, ori_stru_id=0)
+        logging.info(f"id={id}的init结构解冻成功(id={pre_ori_id})\n")
     else:
-        logging.warning(f"id={id}未被冻结，无需解冻\n")
+        logging.warning(f"id={id}的init结构(id={pre_ori_id})没被冻结\n")
 
 
 def write_id(db_path, id, format="vasp"):
@@ -597,7 +687,6 @@ def _view_strus_sorted_by_energy(db_path, select, energy_sort_way="total", singl
     结构出现的顺序可以按照总能量排序(sort_way="total")，也可以按照吸附能(sort_way="adsorb_e")，按照吸附能排序需要给出\
     single_adsorb_element_energy，即吸附物进行独立计算得到的单个原子的能量，EMT()计算H2得到单个H的能量为0.5352706311
     """
-    logging.info("--------------- view scf stru ---------------")
     mydb = db.connect(db_path)
 
     if energy_sort_way == "total":
@@ -608,21 +697,12 @@ def _view_strus_sorted_by_energy(db_path, select, energy_sort_way="total", singl
 
         row_sorted = sorted(selected_list, key=lambda x: x.energy)
 
-        pre_origin_strus_id = []
-        for row in row_sorted:
-            try:
-                pre_row = mydb[row.ori_stru_id]
-                while pre_row.ori_stru_id != 0:
-                    row = mydb[row.ori_stru_id]
-                    pre_row = mydb[row.ori_stru_id]
-                pre_origin_strus_id.append(row.ori_stru_id)
-            except Exception:
-                pre_origin_strus_id.append(row.ori_stru_id)
+        pre_origin_strus_id = [_get_pre_ori_id(db_path, row) for row in row_sorted]
 
         atoms = list(map(lambda x: x.toatoms(), row_sorted))
 
         # 打印
-        logging.info("No.   id     energy    ori_stru_id    pre_ori_stru_id")  # ori_stru_id是上一个结构的id， pre_ori_stru_id是init结构id
+        logging.info("No.   id     total_energy    ori_stru_id    pre_ori_stru_id")  # ori_stru_id是上一个结构的id， pre_ori_stru_id是init结构id
         for index, row in enumerate(row_sorted):
             logging.info("%-6d%-6d%8.4f%15s%17s" % (index+1, row.id, row.energy, row.ori_stru_id, pre_origin_strus_id[index]))
 
@@ -675,10 +755,10 @@ def view_relax_stru_total(db_path):
     selected = list(mydb.select("relaxed=True, ori_stru_id>0"))
 
     # 排除已经冻结的结构
-    for row in selected:
-        if mydb.get(id=row.ori_stru_id).ori_stru_id == -1:
-            # print("1111")
-            selected.remove(row)
+    rm_list = [row for row in selected if _isfreeze(db_path, row)]
+    for dropped in rm_list:
+        selected.remove(dropped)
+
     atoms = list(map(lambda x: x.toatoms(), selected))
 
     # 打印排序后的信息 - 方便从数据库中找结构
@@ -691,6 +771,7 @@ def view_relax_stru_total(db_path):
 
 
 def view_scf_strus(db_path, select="scf=True, ori_stru_id=0, converg=True", energy_sort_way="total", single_adsorb_element_energy=None):
+    logging.info("--------------- view scf stru (only converged) ---------------")
     _view_strus_sorted_by_energy(db_path, select, energy_sort_way, single_adsorb_element_energy)
     
 
@@ -698,4 +779,5 @@ def view_relax_strus(db_path, select="relaxed=True, ori_stru_id>0, relaxed_conve
     """
     不包含为收敛的结构
     """
+    logging.info("--------------- view relax stru (only converged)---------------")
     _view_strus_sorted_by_energy(db_path, select, energy_sort_way, single_adsorb_element_energy)
