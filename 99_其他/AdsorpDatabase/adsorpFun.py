@@ -572,7 +572,8 @@ def freeze_id(db_path, id):
     mydb = db.connect(db_path)
     row = mydb.get(id=id)
     pre_ori_id = _get_pre_ori_id(db_path, row)
-    if isfreeze := _isfreeze(db_path, row):
+    isfreeze = _isfreeze(db_path, row)
+    if isfreeze:
         logging.warning(f"id={id}的init结构(id={pre_ori_id})已经被冻结\n")
     else:
         mydb.update(id=pre_ori_id, ori_stru_id=-1)
@@ -587,7 +588,8 @@ def unfreeze_id(db_path, id):
     mydb = db.connect(db_path)
     row = mydb.get(id=id)
     pre_ori_id = _get_pre_ori_id(db_path, row)
-    if isfreeze := _isfreeze(db_path, row):
+    isfreeze = _isfreeze(db_path, row)
+    if isfreeze:
         mydb.update(id=pre_ori_id, ori_stru_id=0)
         logging.info(f"id={id}的init结构解冻成功(id={pre_ori_id})\n")
     else:
