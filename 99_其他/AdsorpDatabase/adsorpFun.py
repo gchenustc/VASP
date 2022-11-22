@@ -1,4 +1,6 @@
 import itertools as it
+from typing import Sequence
+from typing import Union 
 import logging
 import os
 import time
@@ -285,7 +287,6 @@ def scf(calc, db_path, num_list, adsorb_info={"H": 1}):
                     vaspMove(row, mode="scf")
                 # 更新
             break  # 这一行一定要有，否则it.combinations会遍历所有可能的情况
-
     logging.info(f"一共计算了{n_clacs}个结构")
     logging.info("--------------- 结束批量 scf ---------------\n")
 
@@ -328,11 +329,13 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
         if unconvergence_selected:
             row_list_extent = list(database.select(
             f"relaxed_converg=False, {adsorb_info_str}"))
-            # 去除冻结的情况
-            rm_list = [row for row in row_list_extent if _isfreeze(db_path, row)]
+            # 去除冻结和分解的情况
+            update_label_decomposed(db_path,id_list=[],value_list=[]) # 给没有decomposed标签的row打上标签，值为False
+            rm_list = [row for row in row_list_extent if _isfreeze(db_path, row) or row.decomposed == True]
+
             for dropped in rm_list:
                 row_list_extent.remove(dropped)
-            
+
             # 去除非末端结构的情况
             rm_list = []
             for row in row_list_extent:
@@ -342,8 +345,10 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
                     select_relax_target_id = -1
                 if select_relax_target_id > 0:
                     rm_list.append(row)
-                for dropped in rm_list:
-                    row_list_extent.remove(dropped)
+
+            for dropped in rm_list:
+                row_list_extent.remove(dropped)
+
             if only_unconvergence:
                 row_list = row_list_extent
             else:
@@ -355,7 +360,6 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
             logging.info(
                 f">>> 需要计算的结构有{str_num_old}个，但是数据库中最多只能选择{str_num}个 <<<")
 
-        # 选取str_num个结构进行scf
         for row_groups in it.combinations(row_list, str_num):
             for row in row_groups:
                 atoms = row.toatoms()
@@ -393,7 +397,8 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
                     vaspMove(row, mode="relax")
 
             break  # 这一行一定要有，否则it.combinations会遍历所有可能的情况
-
+    
+    update_label_decomposed(db_path,id_list=[],value_list=[]) # 给没有decomposed标签的row打上标签，值为False
     logging.info(f"一共计算了{n_clacs}个结构")
     logging.info("--------------- 结束批量 relax ---------------\n")
 
@@ -518,7 +523,7 @@ def sr_id(calc, db_path, id, bfgs=True):
                         atoms, relaxed=True, ori_stru_id=select.id, relaxed_converg=True)
             else:
                 _id = mydb.write(
-                    atoms, relaxed=True, ori_stru_id=select.id, relaxed_converg=False)
+                    atoms, relaxed=True, ori_stru_id=select.id, relaxed_converg=True)
             # 更新原始的atoms
             mydb.update(
                 id=select.id, relaxed=True, relax_target_id=_id)
@@ -529,6 +534,7 @@ def sr_id(calc, db_path, id, bfgs=True):
             vaspMove(select, mode="relax")
     else:
         logging.info("该结构已经进行过relax或者已经收敛\n")
+    update_label_decomposed(db_path,id_list=[],value_list=[]) # 给没有decomposed标签的row打上标签，值为False
 
 
 def _get_pre_ori_id(db_path, row):
@@ -626,10 +632,10 @@ def view_strus(db_path, *args, **kwargs):
     logging.info("--------------- view selected strus ---------------")
     selected_list = _view_strus(db_path, *args, **kwargs)[0]
     # 打印信息
-    logging.info("No.  id  is_scf  is_relaxed")
+    logging.info("No.  id  is_relaxed")
     for index, row in enumerate(selected_list):
-        logging.info("%-5d%-5d%-8s%-8s" %
-                     (index+1, row.id, row.scf, row.relaxed))
+        logging.info("%-5d%-5d%-10s" %
+                     (index+1, row.id, row.relaxed))
     logging.info("")
 
 
@@ -655,6 +661,16 @@ def view_strus_id(db_path, id_list):
 def view_freeze_stru(db_path):
     logging.info("--------------- view freeze stru ---------------")
     view_strus(db_path, ori_stru_id=-1)
+
+
+def view_decomposed_stru(db_path):
+    logging.info("--------------- view decomposed stru ---------------")
+    view_strus(db_path, "decomposed=True, ori_stru_id>0")
+
+
+def view_undecomposed_stru(db_path):
+    logging.info("--------------- view undecomposed stru ---------------")
+    view_strus(db_path, "decomposed=False, ori_stru_id>0")
 
 
 def _view_strus_sorted_by_energy(db_path, select, energy_sort_way="total", single_adsorb_element_energy=None):
@@ -751,3 +767,22 @@ def view_relax_strus(db_path, select="relaxed=True, ori_stru_id>0, relaxed_conve
     """
     logging.info("--------------- view relax stru (only converged)---------------")
     _view_strus_sorted_by_energy(db_path, select, energy_sort_way, single_adsorb_element_energy)
+
+
+def update_label_decomposed(db_path: str, id_list: Sequence[int], value_list: Sequence[bool]) -> None:
+    """
+    更新id_list的decomposed标签改为True，同时，给没有decomposed标签的结构添加该标签，值为False
+    """
+    # 没有分解的结构添加decompose=False标签
+    mydb = db.connect(db_path)
+    decomposed = list(map(lambda x: x.id ,mydb.select("decomposed=True")))
+    for row in mydb.select():
+        if row.id not in decomposed and row.ori_stru_id > 0:
+            mydb.update(id = row.id, decomposed=False)
+    
+    for id,value in zip(id_list, value_list):
+        if mydb.get(id=id).ori_stru_id in [0,-1]:
+            logging.info(f"该结构id={id}没有经过结构优化，无法添加标签")
+        else:
+            mydb.update(id = id, decomposed=value)
+    logging.info("")
