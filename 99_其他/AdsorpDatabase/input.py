@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # init_data(atoms_tem=atoms_tem, adsorb_element="H", adsorb_pos_list=adsorb_pos_list, db_path=db_path)
     # scf(vasp_scf, db_path, num_list=[1,10,10,10,10,10,10,10,1], adsorb_info={"H":1}) # num_list为吸附0，1，2...个结构的计算数量
-    # sr(vasp_relax, vasp_relax, num_list=[0,0,0,0,0,0,0,0,0], adsorb_info={"H":1}, unconvergence_selected=False, only_unconvergence=False)
+    # sr(vasp_relax, db_path, num_list=[0,0,0,0,0,0,0,0,0], adsorb_info={"H":1}, unconvergence_selected=False, only_unconvergence=False)
     # scf_id(vasp_scf, db_path, id=1)
     # sr_id(vasp_relax, db_path, id=1)
     # freeze_id(db_path, id=1)
