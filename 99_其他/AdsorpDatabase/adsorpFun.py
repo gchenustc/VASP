@@ -1,20 +1,23 @@
 import itertools as it
-from typing import Sequence
-from typing import Union 
 import logging
 import os
 import time
+from typing import Sequence, Union
+
 import ase
 import ase.db
 import numpy as np
+import pymatgen.core as mg
 from ase import Atom, db
 from ase.build import add_adsorbate
 from ase.calculators.emt import EMT
 from ase.calculators.vasp import Vasp
 from ase.io import read, write
 from ase.optimize import BFGS
-from ase.visualize import view
 from ase.utils.structure_comparator import SymmetryEquivalenceCheck
+from ase.visualize import view
+from pymatgen.analysis.structure_matcher import StructureMatcher
+from pymatgen.core import Structure
 
 """
 描述：
@@ -88,14 +91,14 @@ def _duplicateCheck(db, atoms, check_range):
     return any(len(atoms.numbers) == len(dp_atoms_each.numbers) and np.all(atoms.numbers == dp_atoms_each.numbers) and np.all(np.abs(atoms.positions - dp_atoms_each.positions) < 0.001) for dp_atoms_each in atoms_to_be_check_list)
 
 
-def _symmetryCheck(db, atoms, check_range=None):
+def _symmetryCheck_old(db, atoms, check_range=None):
     """
     check_range: 传入db.select()中的参数，在其中进行重复检测
     """
     if len(db) == 0:
         return False
 
-    comp = SymmetryEquivalenceCheck()
+    comp = SymmetryEquivalenceCheck(angle_tol=2, ltol=0.3, stol=0.5, vol_tol=0.3)
 
     if check_range:
         atoms_to_be_check_list = list(
@@ -105,6 +108,33 @@ def _symmetryCheck(db, atoms, check_range=None):
             map(lambda x: x.toatoms(), list(db.select())))
 
     return any(comp.compare(ats, atoms) for ats in atoms_to_be_check_list)
+
+
+def _ase2pymatgen(ase_stru):
+    """将ase的结构转换为pymatgen的结构"""
+    write(filename=".vasp", images=ase_stru, format="vasp")
+    pymatgen_stru = Structure.from_file(filename=".vasp")
+    os.remove(".vasp")
+    return pymatgen_stru
+
+
+def _symmetryCheck(db, atoms, check_range=None):
+    if len(db) == 0:
+        return False
+
+    if check_range:
+        atoms_to_be_check_list = list(
+            map(lambda x: x.toatoms(), list(db.select(check_range))))
+    else:
+        atoms_to_be_check_list = list(
+            map(lambda x: x.toatoms(), list(db.select())))
+
+    pymatgen_stru_list = [_ase2pymatgen(ats) for ats in atoms_to_be_check_list]
+
+    atoms = _ase2pymatgen(atoms)
+
+    comp = StructureMatcher()
+    return any(comp.fit(ats, atoms) for ats in pymatgen_stru_list)
 
 
 def vaspMove(db_row, mode):
