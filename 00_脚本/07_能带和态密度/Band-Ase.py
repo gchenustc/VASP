@@ -9,7 +9,7 @@ import matplotlib
 from ase.spectrum.band_structure import BandStructure
 import os
 """
-描述：调用vasp计算band
+描述：用ase调用vasp计算band
 
 运行：
 1. 更改参数设置
@@ -38,17 +38,21 @@ image_ratio = (6,5) # 图像比例
 color = "blue" # 能带颜色，可以是#111111
 lwith = 2 # 线条粗细
 bwith = 2 # 边框粗细
-at_name = "attachment" # 计算产生的文件存放的文件夹 - 要提前创建好
+at_name = "attachment"
 bias=0.5
 #  --------------- 参数设置 ---------------
 
+# 创建文件夹
+if not os.path.exists(at_name) and not os.path.isdir(at_name):
+    os.mkdir(at_name)
 
 if not vasp_calc:
       # 读取vasp自洽的结果
       calc = Vasp(restart=True, directory=vasp_calc_dir)
 else:
     print("iter0>>>>>>")
-    # 设置vasp结构优化
+
+# --------------- 设置vasp结构优化 ---------------
     if relax:
         atoms = read(stru_path)
         calc = Vasp(\
@@ -91,8 +95,9 @@ else:
     if relax:
         atoms = read("./CONTCAR")
     else:
-        atoms = read(stru_path)
-    # # 设置vasp自洽计算
+        atoms = read(stru_path) 
+
+# --------------- 设置vasp自洽计算 ---------------
     calc = Vasp(\
         directory="./", # 计算路径
         txt="./out.log", # vasp输出文件名
@@ -137,7 +142,7 @@ else:
     # 获得高对称点路径
     bs = atoms.cell.get_bravais_lattice().bandpath(npoints=300)
 
-    # # 设置vasp非自洽计算
+# --------------- 设置vasp非自洽计算 ---------------
     calc = Vasp(\
         directory="./", # 计算路径
         txt="./out.log", # vasp输出文件名

@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from ase.dft.dos import DOS
 """
-描述：调用vasp计算dos
+描述：用ase调用vasp计算dos
 
 运行：
 1. 更改参数设置
@@ -36,11 +36,12 @@ color = "blue" # 能带颜色，可以是#111111
 lwith = 2 # 线条粗细
 bwith = 2 # 边框粗细
 bias = 0.2
-at_name = "attachment" # 计算产生的文件存放的文件夹 - 要提前创建好
-
-# 用 ase.spacegroup 创建 cgN
-# atoms = crystal(symbols=["N"], spacegroup=199, basis=[(0.085,0.085,0.085)], cellpar=[3.765, 3.765, 3.765, 90, 90, 90])
+at_name = "attachment" # 计算产生的文件存放的文件夹
 #  --------------- 参数设置 --------------- 
+
+# 创建文件夹
+if not os.path.exists(at_name) and not os.path.isdir(at_name):
+    os.mkdir(at_name)
 
 if not vasp_calc:
     calc = Vasp(restart=True, directory=vasp_calc_dir)
@@ -173,7 +174,6 @@ d = dos.get_dos()
 e = dos.get_energies()
 
 # plot
-
 image_ratio = ((image_ratio[0]/image_ratio[1]) * 5, 5)
 fig = plt.figure(1, figsize=image_ratio, dpi=100)
 ax = fig.add_subplot(111)

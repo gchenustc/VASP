@@ -91,7 +91,7 @@ class FixAtoms(object):
 
         for index, each_atom_coor in enumerate(self.pos_arr):
             if index in fixed_index_list:
-                fixed_sign_list.append(['F', 'F', 'T'])
+                fixed_sign_list.append(['F', 'F', 'F'])
             else:
                 fixed_sign_list.append(['T', 'T', 'T'])
         self.pos_arr = np.c_[self.pos_arr, np.array(
