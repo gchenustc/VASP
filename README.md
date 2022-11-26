@@ -237,8 +237,8 @@ pip3 install ase
 pip3 install matplotlib
 ```
 - 用法：
-1. 更改参数设置  
-2. 在代码中修改vasp参数  
+1. 在代码中调整参数 
+2. 在代码中修改vasp的INCAR设置  
 3. 运行此文件  
 ``` shell
 python Band-Ase.py
@@ -254,12 +254,13 @@ pip3 install ase
 pip3 install matplotlib
 ```
 - 用法： 
-1. 更改参数设置  
-2. 在代码中修改vasp参数  
-3. 运行此文件  
+1. 在代码中调整参数 
+2. 在代码中修改vasp的INCAR设置  
+3. 运行此文件 
 ``` shell
 python Dos-Ase.py
 ```
+---
 
 13. Phonon-Ase.py
 - 描述：用ase调用vasp计算phonon，并绘制图形   
@@ -270,12 +271,13 @@ pip3 install ase
 pip3 install matplotlib
 ```
 - 用法：
-1. 更改参数设置  
-2. 在代码中修改vasp参数  
+1. 在代码中调整参数 
+2. 在代码中修改vasp的INCAR设置  
 3. 运行此文件  
 ``` shell
 python Phonon-Ase.py
 ```
 ---
+
 
 
