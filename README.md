@@ -228,4 +228,54 @@ python AveBondLen.py
 ```
 ---
 
+11. Band-Ase.py
+- 描述：用ASE调用VASP去计算能带，并绘制图形  
+- 环境：python, 需要安装numpy,ase,matplotlib   
+``` shell
+pip3 install numpy
+pip3 install ase
+pip3 install matplotlib
+```
+- 用法：
+1. 更改参数设置  
+2. 在代码中修改vasp参数  
+3. 运行此文件  
+``` shell
+python Band-Ase.py
+```
+---
+
+12. Dos-Ase.py
+- 描述：用ase调用vasp计算dos，并绘制图形  
+- 环境：python, 需要安装numpy,ase,matplotlib  
+``` shell
+pip3 install numpy
+pip3 install ase
+pip3 install matplotlib
+```
+- 用法： 
+1. 更改参数设置  
+2. 在代码中修改vasp参数  
+3. 运行此文件  
+``` shell
+python Dos-Ase.py
+```
+
+13. Phonon-Ase.py
+- 描述：用ase调用vasp计算phonon，并绘制图形   
+- 环境：python, 需要安装numpy,ase,matplotlib  
+``` shell
+pip3 install numpy
+pip3 install ase
+pip3 install matplotlib
+```
+- 用法：
+1. 更改参数设置  
+2. 在代码中修改vasp参数  
+3. 运行此文件  
+``` shell
+python Phonon-Ase.py
+```
+---
+
 

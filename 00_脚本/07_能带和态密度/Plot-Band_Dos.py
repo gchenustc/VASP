@@ -35,9 +35,13 @@ lwith = 2 # 线条粗细
 bwith = 2 # 边框粗细
 dos_fill_color = "grey"
 dos_edge_color = "black"
-at_name = "attachment" # 计算产生的文件存放的文件夹 - 要提前创建好
+at_name = "attachment" # 计算产生的文件存放的文件夹
 bias=0.5
 #  --------------- 参数设置 --------------- 
+
+# 创建文件夹
+if not os.path.exists(at_name) and not os.path.isdir(at_name):
+    os.mkdir(at_name)
 
 calc1 = Vasp(restart=True, directory=band_calc_dir)
 calc2 = Vasp(restart=True, directory=dos_calc_dir)

@@ -36,7 +36,7 @@ parser.add_argument('-v','--visualize', action="store_true", default=False, help
 parser.add_argument('-d','--mode', action="store", default="cartesian", choices=["c","C","D","d","direct","cartesian","Direct","Cartesian"], help='move mode')
 parser.add_argument('-p','--prop', action="store_true", help='switch moved by percentage')
 parser.add_argument('-m','--moving', required=True, nargs=3, help="Specify the length moved along corresponding basis vetor(x,y,z)")
-prm = parser.parse_args("-c POSCAR POSCAR1 -d d -m 0 0 10".split())
+prm = parser.parse_args()
 
 # Starting
 starttime = time.time()
