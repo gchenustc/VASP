@@ -567,6 +567,66 @@ def sr_id(calc, db_path, id, bfgs=True):
     update_label_decomposed(db_path,id_list=[],value_list=[]) # 给没有decomposed标签的row打上标签，值为False
 
 
+def sr_id_inplace(calc, db_path, id, bfgs=True):
+    """
+    对指定id的结构进行relax计算，原位替换该id的结构和其他信息。
+    该结构需要经历relax。
+    """
+    logging.info("--------------- relax for single stru ---------------")
+    if isinstance(calc, Vasp):
+        bfgs = False
+        # 将vasp计算的结果扔进calc_record保存，所以首先要创建这个文件夹
+        if not (os.path.exists("calc_record") and os.path.isdir("calc_record")):
+            os.mkdir("calc_record")
+        calc.directory = ("workdir")
+
+    mydb = db.connect(db_path)
+    select = mydb.get(id=id)
+
+    pre_ori_id = _get_pre_ori_id(db_path, select)
+    if _isfreeze(db_path, select):
+        logging.info(f"id={select.id}的结构的init结构(id={pre_ori_id})已经被冻结,请先解冻\n")
+        return
+
+    try:
+        select_relax_target_id = select.relax_target_id
+    except Exception:
+        select_relax_target_id = -1
+
+    if select.ori_stru_id > 0 and select_relax_target_id<=0:
+        logging.info(f"id={select.id}开始进行relax")
+        atoms = select.toatoms()
+        atoms.calc = calc
+        if bfgs:
+            bfgs = BFGS(atoms)
+            bfgs.run(fmax=1e-1)
+        try:
+            atoms.get_potential_energy()
+            if isinstance(calc, Vasp):
+                # 计算完成后取得离子步
+                nsw_actual = int(
+                    os.popen(r"grep -E 'F=' ./workdir/OSZICAR | wc -l").read())
+                # 判断收敛
+                if nsw_actual == int(calc.parameters["nsw"]):
+                    # 另外写入scf后的atoms
+                    _id = mydb.write(
+                        atoms=atoms, id=select.id, relaxed_converg=False)
+                else:
+                    _id = mydb.write(
+                        atoms=atoms, id=select.id, relaxed_converg=True)
+            else:
+                _id = mydb.write(
+                    atoms, id=select.id, relaxed_converg=True)
+            logging.info(f"id={select.id}的结构relax成功\n")
+        except Exception:
+            logging.info(f"id={select.id}的结构relax失败，请查看计算日志\n")
+        if isinstance(calc, Vasp):
+            vaspMove(select, mode="relax")
+    else:
+        logging.info("该结构已经进行过relax或者已经收敛\n")
+    update_label_decomposed(db_path,id_list=[],value_list=[]) # 给没有decomposed标签的row打上标签，值为False
+
+
 def _get_pre_ori_id(db_path, row):
     """返回原始init结构的id"""
     mydb = db.connect(db_path)

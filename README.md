@@ -82,6 +82,113 @@ python kpGen.py -c POSCAR -r 0.2 -s 0.01 -o KPOINTS # -r: 相邻k点的距离(un
 > https://github.com/Chengcheng-Xiao/Tools/tree/master/VASP
 ---
 
+6. CalcCohp.py
+- 描述：计算cohp
+- 环境：python, 需要安装numpy,ase
+``` shell
+pip3 install numpy
+pip3 install ase
+```
+- 用法：
+``` shell
+python current_file.py -l lobster  # -l 后指定lobster的执行命令
+python current_file.py -l lobster -p -a 2 4 5 7  # 出现 -p 则表示计算指定原子的cohp(否则计算所有原子的cohp), -a 后为指定原子的序号，比如示例将计算序号为2和4以及5和7原子的cohp
+```
+- 注意，用ase调用vasp计算需要配置好vasp的执行环境和POTCAR的目录位置，可以看官网教程
+> https://wiki.fysik.dtu.dk/ase/ase/calculators/vasp.html#introduction
+---
+
+7. PlotCohp.py
+- 描述：用CalcCohp.py计算cohp后，用此脚本批量绘图
+- 环境：python, 需要安装numpy,matplotlib
+``` shell
+pip3 install numpy
+pip3 install matplotlib
+```
+- 用法：
+``` shell
+python PlotCohp.py
+```
+---
+
+8. AveBondLen.py
+- 描述：按照成键种类计算其平均键长，当然也给出所有键的平均键长
+- 环境：python, 需要安装numpy,ase
+``` shell
+pip3 install numpy
+pip3 install ase
+```
+- 用法：
+``` shell
+python AveBondLen.py
+```
+---
+
+9. Band-Ase.py
+- 描述：用ASE调用VASP去计算能带，并绘制图形  
+- 环境：python, 需要安装numpy,ase,matplotlib   
+``` shell
+pip3 install numpy
+pip3 install ase
+pip3 install matplotlib
+```
+- 用法：
+1. 在代码中调整参数 
+2. 在代码中修改vasp的INCAR设置  
+3. 运行此文件  
+``` shell
+python Band-Ase.py
+```
+---
+
+10. Dos-Ase.py
+- 描述：用ase调用vasp计算dos，并绘制图形  
+- 环境：python, 需要安装numpy,ase,matplotlib  
+``` shell
+pip3 install numpy
+pip3 install ase
+pip3 install matplotlib
+```
+- 用法： 
+1. 在代码中调整参数 
+2. 在代码中修改vasp的INCAR设置  
+3. 运行此文件 
+``` shell
+python Dos-Ase.py
+```
+---
+
+11. Phonon-Ase.py
+- 描述：用ase调用vasp计算phonon，并绘制图形   
+- 环境：python, 需要安装numpy,ase,matplotlib  
+``` shell
+pip3 install numpy
+pip3 install ase
+pip3 install matplotlib
+```
+- 用法：
+1. 在代码中调整参数 
+2. 在代码中修改vasp的INCAR设置  
+3. 运行此文件  
+``` shell
+python Phonon-Ase.py
+```
+---
+
+12. StruEquiTest.py  
+- 描述：检测两个结构是否为等价，支持多种文件格式     
+- 环境：python, 需要安装numpy,ase,pymatgen  
+``` shell
+pip3 install numpy
+pip3 install ase
+pip3 install pymatgen
+```
+- 用法：
+``` shell
+python *.py -c1 POSCAR1 -c2 POSCAR2  # POSCAR1和POSCAR2分别分两个结构文件的路径
+```
+---
+
 ## 结构变换脚本
 1. MoveAlongAxis.py
 - 描述：沿着x,y,z轴（笛卡尔坐标）整体移动原子
@@ -185,99 +292,9 @@ pip3 install ase
 ``` shell
 python ToCartesian.py -c POSCAR
 ```
-
-8. CalcCohp.py
-- 描述：计算cohp
-- 环境：python, 需要安装numpy,ase
-``` shell
-pip3 install numpy
-pip3 install ase
-```
-- 用法：
-``` shell
-python current_file.py -l lobster  # -l 后指定lobster的执行命令
-python current_file.py -l lobster -p -a 2 4 5 7  # 出现 -p 则表示计算指定原子的cohp(否则计算所有原子的cohp), -a 后为指定原子的序号，比如示例将计算序号为2和4以及5和7原子的cohp
-```
-- 注意，用ase调用vasp计算需要配置好vasp的执行环境和POTCAR的目录位置，可以看官网教程
-> https://wiki.fysik.dtu.dk/ase/ase/calculators/vasp.html#introduction
 ---
 
-9. PlotCohp.py
-- 描述：用CalcCohp.py计算cohp后，用此脚本批量绘图
-- 环境：python, 需要安装numpy,matplotlib
-``` shell
-pip3 install numpy
-pip3 install matplotlib
-```
-- 用法：
-``` shell
-python PlotCohp.py
-```
----
 
-10. AveBondLen.py
-- 描述：按照成键种类计算其平均键长，当然也给出所有键的平均键长
-- 环境：python, 需要安装numpy,ase
-``` shell
-pip3 install numpy
-pip3 install ase
-```
-- 用法：
-``` shell
-python AveBondLen.py
-```
----
-
-11. Band-Ase.py
-- 描述：用ASE调用VASP去计算能带，并绘制图形  
-- 环境：python, 需要安装numpy,ase,matplotlib   
-``` shell
-pip3 install numpy
-pip3 install ase
-pip3 install matplotlib
-```
-- 用法：
-1. 在代码中调整参数 
-2. 在代码中修改vasp的INCAR设置  
-3. 运行此文件  
-``` shell
-python Band-Ase.py
-```
----
-
-12. Dos-Ase.py
-- 描述：用ase调用vasp计算dos，并绘制图形  
-- 环境：python, 需要安装numpy,ase,matplotlib  
-``` shell
-pip3 install numpy
-pip3 install ase
-pip3 install matplotlib
-```
-- 用法： 
-1. 在代码中调整参数 
-2. 在代码中修改vasp的INCAR设置  
-3. 运行此文件 
-``` shell
-python Dos-Ase.py
-```
----
-
-13. Phonon-Ase.py
-- 描述：用ase调用vasp计算phonon，并绘制图形   
-- 环境：python, 需要安装numpy,ase,matplotlib  
-``` shell
-pip3 install numpy
-pip3 install ase
-pip3 install matplotlib
-```
-- 用法：
-1. 在代码中调整参数 
-2. 在代码中修改vasp的INCAR设置  
-3. 运行此文件  
-``` shell
-python Phonon-Ase.py
-```
----
 
 
 
