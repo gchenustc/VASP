@@ -468,10 +468,10 @@ def scf_id(calc, db_path, id):
                     # 判断收敛
                     if nelm_actual == int(calc.parameters["nelm"]):
                         mydb.update(id=select.id, atoms=atoms,
-                                    scf=True, converg=True)
+                                    scf=True, converg=False)
                     else:
                         mydb.update(id=select.id, atoms=atoms,
-                                    scf=True, converg=False)
+                                    scf=True, converg=True)
                 else:
                     mydb.update(id=select.id, atoms=atoms, scf=True, converg=True)
                 logging.info(f"id={select.id}的结构scf成功\n")
