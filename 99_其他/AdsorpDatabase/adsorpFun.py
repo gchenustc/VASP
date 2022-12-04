@@ -18,6 +18,7 @@ from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from ase.visualize import view
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
+import random
 
 """
 描述：
@@ -112,29 +113,23 @@ def _symmetryCheck_old(db, atoms, check_range=None):
 
 def _ase2pymatgen(ase_stru):
     """将ase的结构转换为pymatgen的结构"""
-    write(filename=".vasp", images=ase_stru, format="vasp")
-    pymatgen_stru = Structure.from_file(filename=".vasp")
-    os.remove(".vasp")
-    return pymatgen_stru
+    if not os.path.isdir(".temp"):
+        os.mkdir(".temp")
+    random_name = f"{random.random()}.vasp"
+    write(filename=f".temp/{random_name}", images=ase_stru, format="vasp")
+    return Structure.from_file(filename=f".temp/{random_name}")
 
 
-def _symmetryCheck(db, atoms, check_range=None):
-    if len(db) == 0:
+def _symmetryCheck(atoms_to_be_check_list, atoms):
+    """
+    atoms_to_be_check_list: 待检测的列表,pymatgen的格式
+    atoms: 被检测的结构,pymatgen的格式
+    如果atoms与atoms_to_be_check_list中的结构等价，返回True
+    """
+    if not atoms_to_be_check_list:
         return False
-
-    if check_range:
-        atoms_to_be_check_list = list(
-            map(lambda x: x.toatoms(), list(db.select(check_range))))
-    else:
-        atoms_to_be_check_list = list(
-            map(lambda x: x.toatoms(), list(db.select())))
-
-    pymatgen_stru_list = [_ase2pymatgen(ats) for ats in atoms_to_be_check_list]
-
-    atoms = _ase2pymatgen(atoms)
-
     comp = StructureMatcher()
-    return any(comp.fit(ats, atoms) for ats in pymatgen_stru_list)
+    return any(comp.fit(ats, atoms) for ats in atoms_to_be_check_list)
 
 
 def vaspMove(db_row, mode):
@@ -150,15 +145,21 @@ def init_data(atoms_tem, adsorb_element, adsorb_pos_list, db_path):
     注意，如果模板结构的POSCAR固定了，以后所有的衍生结构都按照此固定方式进行结构优化
     """
     logging.info("--------------- 开始初始化数据库 ---------------")
+
+
     n_strus = 0
     n_strus_total = list(map(lambda x: 0, adsorb_pos_list.copy()))
     n_strus_write = n_strus_total.copy()
     n_strus_repeat = n_strus_total.copy()
     mydb = db.connect(db_path)
 
+    database_strus = [_ase2pymatgen(i.toatoms()) for i in mydb.select()]
+
     # 写入模板结构
-    if not _symmetryCheck(mydb, atoms_tem, check_range="H=0"):
+    pymatgen_atoms_temp = _ase2pymatgen(atoms_tem)
+    if not _symmetryCheck(database_strus, pymatgen_atoms_temp):
         mydb.write(atoms_tem, scf=False, relaxed=False, ori_stru_id=0)
+        database_strus.append(pymatgen_atoms_temp)
         n_strus += 1
 
     for index, n in enumerate(range(len(adsorb_pos_list))):  # 1 or 2 or 3 ...
@@ -171,14 +172,15 @@ def init_data(atoms_tem, adsorb_element, adsorb_pos_list, db_path):
                 atoms.append(atom)
 
             # n_adsorb如果指定，则只在吸附n_adsorb个的结构中检查
-            if not _symmetryCheck(mydb, atoms, check_range=f"H={n_adsorb}"):
+            pymatgen_atoms = _ase2pymatgen(atoms)
+            if not _symmetryCheck(database_strus, pymatgen_atoms):
                 mydb.write(atoms, scf=False, relaxed=False, ori_stru_id=0)
+                database_strus.append(pymatgen_atoms)
                 n_strus += 1
                 n_strus_write[n] += 1
             else:
                 n_strus_repeat[n] += 1
             n_strus_total[n] += 1
-
     logging.info(f"有1,2,3...个吸附物的结构一共找到{str(n_strus_total).strip('[]')}个")
     logging.info(f"因为等价而剔除的结构分别分{str(n_strus_repeat).strip('[]')}个")
     logging.info(f"写入数据库的结构分别分{str(n_strus_write).strip('[]')}个")
