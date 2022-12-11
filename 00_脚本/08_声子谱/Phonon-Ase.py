@@ -15,7 +15,10 @@ import os
 2. 在代码中修改vasp参数
 3. 运行此文件
 
-字体设置为Arial
+注意：
+1. 需要在linux系统下运行该程序  
+2. 需要安装ase，并且有ase需要的vasp环境（包括势函数位置和vasp运行的命令）或者DP势的环境
+3. 字体设置为Arial
 如果系统没有Arial，下载Arial.ttf字体，使用以下命令获得matplotlib字体配置目录
 >>>
 import matplotlib.pyplot as plt
@@ -26,15 +29,16 @@ print(matplotlib.matplotlib_fname())  ---> /root/Software/anaconda3/envs/deepmd/
 """
 # --------------参数设置-------------
 plt.rcParams["font.sans-serif"] = ['Arial']
-stru_path = "./cgN_unrelax.vasp" # 结构路径
+stru_path = "./POSCAR" # 结构路径
 calc_type = "VASP" # 计算器类型可以选"EMT","VASP","DP"
-super_cell = (3,3,3) # 计算声子过程的扩胞大小
+super_cell = (3,2,1) # 计算声子过程的扩胞大小
 at_name = "attachment" #计算产生的文件存放的文件夹
 phonon_color = "blue" # phonon颜色，可以是#111111
 image_ratio = (7,5) # 图像比例
 lwith = 2 # 线条粗细
 bwith = 2 # 边框粗细
 bias = -0.0005 # y轴上展示区域的偏移值，如果偏移值过大，图像在y轴上会过于拥挤
+y_label_size = 12 # y_label 的大小
 dos_fill_color = "grey" # dos填充颜色
 dos_edge_color = "black" # dos边缘颜色
 # --------------参数设置-------------
@@ -53,30 +57,35 @@ if calc_type.lower() == "vasp":
         directory="./workdir", # 计算路径
         txt="./out.log", # vasp输出文件名
         xc="pbe",
-        npar=8,
-        #lreal="auto",
+        setups={"N":"_h", "F":"_h"},
+        npar=8, 
+        lreal=False,
         #isym=0,
         istart=0,
         icharg=2,
         prec="Accurate",
+        #addgrid=True,  # 增加精度
         ibrion=-1,
+        #nfree=2,
         #isif=3,
         #nsw=500,
-        encut=520,
+        encut=1000,
         nelm=300,
         nelmin=8,
-        ediff=1E-6,
-        #ediffg=ediffg,
-        ismear=0,
+        ediff=1E-8,
+        pstress=2000,   # change!!!!!!
+        #ediffg=-1e-3,
+        ismear=0,   # -5
         sigma=0.05,
-        lwave=".F.",
-        lcharg=".F.",
-        kpts = [10,10,10], 
-        gamma = "False",
-        algo = "FAST",
-        #ialgo=38,
-        setups='recommended',\
+        lwave=False,
+        lcharg=False,
+        kspacing=0.15, 
+        kgamma=False,
+        #algo="FAST",
+        ialgo=38,
+        ivdw=11,
         )
+
 # ------------VASP参数设置---------------
 elif calc_type.lower() == "dp": 
     from deepmd.calculator import DP
@@ -105,18 +114,18 @@ ph.read(method='standard', acoustic=True) # frederiksen or standard
 ph.clean()
 
 # 获得K_path
-path = atoms.cell.get_bravais_lattice().bandpath(npoints=100)  # path.path >>> "GXMGRX,MR"
+path = atoms.cell.get_bravais_lattice().bandpath(npoints=200)  # path.path >>> "GXMGRX,MR"
 # 获得声子带结构 
 bs = ph.get_band_structure(path)
 
 # 计算dos
-dos = ph.get_dos(kpts=(20, 20, 20)).sample_grid(npts=100, width=1e-3)
+dos = ph.get_dos(kpts=(40, 40, 40)).sample_grid(npts=200, width=1e-3)
 
 # 绘图
 def phonopy_plot(bs, ax, color="b", bwith=1, lwith=1, bais=bias, show=False, savepath=None): # savepath: 图像保存路径
 
     # 绘图数据
-    energies = bs.energies  # energies.shape: 1,100,24 # 24条带
+    frenquency = bs.energies/0.0041  # energies.shape: 1,100,24 # 24条带
     xcoords, label_xcoords, orig_labels = map(list,bs.get_labels()) # xcoords.shape: 100
     # label_xcoords: [0.         0.83442036 1.66884072 2.84888931 4.29414777 5.47419635 5.47419635 6.30861671]
     # orig_labels: ['G', 'X', 'M', 'G', 'R', 'X', 'M', 'R']
@@ -146,12 +155,12 @@ def phonopy_plot(bs, ax, color="b", bwith=1, lwith=1, bais=bias, show=False, sav
         ax.axvline(x, color='0.5')
 
     # y label
-    ylabel = 'Energies [eV]'
+    ylabel = 'Frenquency (THZ)'
 
     # x tick
     ax.set_xticks(label_xcoords)
     ax.set_xticklabels(labels)
-    ax.set_ylabel(ylabel)
+    ax.set_ylabel(ylabel, fontsize=y_label_size)
 
     ax.spines['bottom'].set_linewidth(bwith)
     ax.spines['left'].set_linewidth(bwith)
@@ -162,11 +171,11 @@ def phonopy_plot(bs, ax, color="b", bwith=1, lwith=1, bais=bias, show=False, sav
     ax.axhline(bs.reference, color='k', ls=':')
 
     # 图像范围
-    emin= dos.get_energies().min()-bais
-    emax = dos.get_energies().max()+bais
+    emin= (dos.get_energies().min())/0.0041-bais
+    emax = (dos.get_energies().max())/0.0041+bais
     ax.axis(xmin=0, xmax=xcoords[-1], ymin=emin, ymax=emax)
 
-    for spin, e_kn in enumerate(energies): # e_kn.shape: 100,24
+    for spin, e_kn in enumerate(frenquency): # e_kn.shape: 100,24
         ax.plot(xcoords, e_kn[:, 0], color=color, lw=lwith)
         # 绘制每一条能带
         for e_k in e_kn.T:
@@ -191,12 +200,12 @@ dosax.spines['right'].set_linewidth(bwith)
 dosax.fill_between(x=dos.get_weights(), y1=dos.get_energies(), y2=0, color=dos_fill_color,edgecolor=dos_edge_color, lw=lwith)
 
 dosax.set_ylim(dos.get_energies().min()-bias, dos.get_energies().max()+bias)
-dosax.set_xlabel("DOS", fontsize=10)
+dosax.set_xlabel("DOS", fontsize=12)
 dosax.set_yticks([])
 dosax.set_xticks([])
 
 # 在能量参考处处画一条虚线
 dosax.axhline(bs.reference, color='k', ls=':',lw=2)
 
-fig.savefig(f"{at_name}/8_phonon_.png")
-
+# 保存文件
+fig.savefig(f"{at_name}/phonon.png")

@@ -170,6 +170,22 @@ pip3 install matplotlib
 1. 在代码中调整参数 
 2. 在代码中修改vasp的INCAR设置  
 3. 运行此文件  
+
+- 注意： 
+1. 需要在linux系统下运行该程序  
+2. 需要安装ase，并且有ase需要的vasp环境（包括势函数位置和vasp运行的命令）或者DP势的环境（关于如何用ase调用vasp请看官网教程） 
+3. 默认将图片的字体设置为Arial  
+如果系统没有Arial，请下载Arial.ttf字体，否则用默认字体，使用以下命令获得matplotlib字体配置目录  
+```python
+import matplotlib.pyplot as plt
+print(matplotlib.matplotlib_fname())
+```
+输出  
+``` shell
+/root/Software/anaconda3/envs/deepmd/lib/python3.10/site-packages/matplotlib/mpl-data/matplotlibrc
+```
+将Arial.ttf拷贝进./fonts/ttf/中  
+删除缓存 rm -rf ~/.cache/matplotlib后运行脚本  
 ``` shell
 python Phonon-Ase.py
 ```
