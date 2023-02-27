@@ -1,6 +1,6 @@
 # 设定压力
 pressure="20 40 60 80 100"
-current=0
+current=-1
 for pre in ${pressure}
 do
     next=${pre}
@@ -12,7 +12,7 @@ do
     fi
     cp INCAR POSCAR POTCAR KPOINTS sub.sh ./${next}
 
-    if [ ${current} -ne 0 ];then
+    if [ ${current} -ne -1 ];then
         cp ${current}/CONTCAR ${next}/POSCAR
     fi
 
