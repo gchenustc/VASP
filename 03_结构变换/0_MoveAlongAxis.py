@@ -14,7 +14,7 @@ import numpy as np
 description: Move atoms along the specific axis
 usage:
 python *.py -c POSCAR1 POSCAR2 -m 0 0 1 # 将POSCAR1和POSCAR2沿着z轴（Cartesian坐标）移动1A，可以不传入-c，默认文件名为POSCAR
-python *.py -c POSCAR1 POSCAR2 -d direct -m 0 0 1 -v # -d指移动mode，沿着c轴（分数坐标）移动
+python *.py -c POSCAR1 POSCAR2 -d direct -m 0 0 1 -v # -d指移动mode，沿着轴移动，而不是沿着固定的笛卡尔坐标移动，如果是胞是四方结构，开不开此项都一样。
 python *.py -c POSCAR1 POSCAR2 -d direct -p -m 0 0 0.1 -v # -p打开后，按照胞长的比例移动，-p参数需要-d direct
 """
 
@@ -66,9 +66,16 @@ if prm.visualize==True:
 
 # moving operate
 if prm.mode[0].lower() == "d":
-    if not prm.prop:
+    if not prm.prop: # prm.moving 不是比例而是长度时
+        #print(1)
         moving = np.array(moving)/np.array(cell_len)
-    [pos.set_scaled_positions(pos.get_scaled_positions()+moving[index]) for index,pos in enumerate(i_poscars_r)]
+    #print(type(i_poscars_r))
+    #print(i_poscars_r[0].get_scaled_positions())
+    #print(cell_len)
+    #print(moving)
+    #i_poscars_r[0].set_scaled_positions(i_poscars_r[0].get_scaled_positions()+moving)
+    [pos.set_scaled_positions(pos.get_scaled_positions()+moving) for index,pos in enumerate(i_poscars_r)]
+    #print(i_poscars_r[0].get_scaled_positions())
 
 elif prm.mode[0].lower() == "c": 
     for position in positions:
