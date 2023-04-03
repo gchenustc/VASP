@@ -201,7 +201,7 @@ pip3 install pymatgen
 ```
 - 用法：
 ``` shell
-python *.py -c1 POSCAR1 -c2 POSCAR2  # POSCAR1和POSCAR2分别分两个结构文件的路径
+python *.py POSCAR1 POSCAR2 ...  # POSCAR*为结构文件的路径
 ```
 ---
 
