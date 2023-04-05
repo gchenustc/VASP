@@ -205,6 +205,32 @@ python *.py POSCAR1 POSCAR2 ...  # POSCAR*为结构文件的路径
 ```
 ---
 
+13. doping.py  
+- 描述：随机替换掺杂，需要提供模板结构，并更改 “tem_stru_path” 这个变量为结构文件名，其他参数请看文件的末尾。  
+在“old_strus_dir_name”中的子文件夹中的结构为排除的结构，脚本生成的结构会排除与其等价的结构。可以不提供该文件夹，但此变量必须存在。  
+不要将排除结构直接放在old_strus下 ，比如old_strus_dir_name=old_strus  
+```shell
+tree old_strus
+```
+>>>
+old_strus/a/a.vasp
+old_strus/a/b.vasp
+old_strus/b/a.vasp
+old_strus/b/b.vasp
+<<<
+ 
+
+- 环境：python, 需要安装numpy,ase,pymatgen   
+``` shell
+pip3 install numpy
+pip3 install ase
+pip3 install pymatgen
+```
+
+使用方法：
+与general_fun放在同一个文件夹下，直接运行该文件
+---
+
 ## 结构变换脚本
 1. MoveAlongAxis.py
 - 描述：沿着x,y,z轴（笛卡尔坐标）整体移动原子
