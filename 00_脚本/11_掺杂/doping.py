@@ -6,6 +6,7 @@ import os
 import numpy as np
 import random
 import time
+import logging
 """
 简介
 随机掺杂，需要提供模板结构，并更改 “tem_stru_path” 这个变量为结构文件名，其他参数请看末尾
@@ -27,7 +28,8 @@ old_strus/b/b.vasp
 与general_fun放在同一个文件夹下，直接运行该文件
 python doping.py
 """
-
+logging.basicConfig(level=logging.INFO, filename="log.txt", filemode="a",
+                            format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 
 def get_doped_index_groups(tem_stru, doped_element, n_doped):
     """返回掺杂原子在tem_stru中的结构索引，例如 n_doped=3, 返回值为[(3,12,34),(1,63,1)...]，列表里的每一个元组都是一种掺杂可能性"""
@@ -97,17 +99,17 @@ def get_all_doping_strus(tem_stru, doped_element, doping_element, n_doped, n_out
     n_total = 0  # n_total是检测的结构的总量
     for doped_index in doped_index_groups:
         n_total += 1 
-        print("checking no.%d stru. " % n_total, end="")
+        logging.info(f"checking no.{n_total} stru.")
         stru_doped = doping(tem_stru_pymatgen, doping_element, doped_index)
         if not duplicated_check(stru_doped,existed_strus_list+strus_doped_list):
             n += 1
-            print("... This is the required structure ...")
+            logging.info("\t\t\t\t\t... This is the required structure ...")
             strus_doped_list.append(stru_doped)
             stru_doped.to(filename=f"{prefix}_{n_doped}{doping_element}_no.{n+index_start-1}.vasp",fmt="POSCAR")
             if n>=n_out:
                 break
         else:
-            print("... repeated ...")
+            logging.info("\t\t\t\t\t... repeated ...")
     return strus_doped_list
     
 
@@ -115,24 +117,22 @@ def get_all_doping_strus(tem_stru, doped_element, doping_element, n_doped, n_out
 if __name__ == "__main__":
     # 开始时间
     starttime = time.time()
-    print("Starting calculation at", end='')
-    print(time.strftime("%H:%M:%S on %a %d %b %Y\n"))
 
     # 已创建的结构的目录（新创建的结构不包含该目录的结构或者等价的结构）
     old_strus_dir_name = "old_strus"
     # 模板结构的名称
-    tem_stru_path = "cgN.vasp" 
+    tem_stru_path = "BPN_30GPa_3x1x2.vasp" 
     # 被掺杂元素和掺杂元素
-    doped_element = "P"
-    doping_element = "H"
+    doped_element = "N"
+    doping_element = "P"
     # 取代的数量
-    n_doped = 3
+    n_doped = 4
     # 输出结构的数量
-    n_out = 4
+    n_out = 19
     # 输出结构的索引从数字几开始
-    index_start=1
+    index_start=32
     # 输出结构的前缀
-    prefix=""
+    prefix="BPN_30GPa_3x1x2"
     # 读取模板结构-ase,pymatgen
     tem_stru_ase = read(tem_stru_path)
     tem_stru_pymatgen = Sr.from_file(tem_stru_path)
@@ -142,7 +142,5 @@ if __name__ == "__main__":
     # 结束时间
     endtime = time.time()
     runtime = endtime-starttime
-    print("\nEnd of calculation.")
-    print("Program was running for %.2f seconds." % runtime)
-    print("Ending calculation at", end='')
-    print(time.strftime("%H:%M:%S on %a %d %b %Y\n"))
+    logging.info("\nEnd of calculation.")
+    logging.info("Program was running for %.2f seconds." % runtime)
