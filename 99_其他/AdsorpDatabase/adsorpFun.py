@@ -4,6 +4,8 @@ import os
 import time
 from typing import Sequence, Union
 
+from func import *
+
 import ase
 import ase.db
 import numpy as np
@@ -29,116 +31,6 @@ logging.basicConfig(level=logging.INFO, filename="log.txt", filemode="a",
                     format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 
 
-def copyfile(path_1, path_2):
-    """
-    将路径path_1下的所有目录及文件复制到路径path_2下
-    path_1: 待复制的目录或者文件路径
-    path_2: 目标路径
-    """
-    if os.path.isdir(path_1):  # path_1是目录
-
-        list_1 = os.listdir(path_1)
-        if not list_1:  # 复制目录，仅仅是复制空目录
-            os.mkdir(path_2)
-        else:
-            os.mkdir(path_2)  # 先复制最上层空目录
-            for i in list_1:
-                path_r = os.path.join(path_1, i)  # 下层目录或文件的绝对路径
-                path_w = os.path.join(path_2, i)  # 目标目录或文件的绝对路径
-                if os.path.isfile(path_r):  # 是文件则直接进行复制
-                    with open(path_r, 'rb') as rstream:
-                        container = rstream.read()
-                        with open(path_w, 'wb') as wstream:
-                            wstream.write(container)
-                else:  # 是目录则调用本函数
-                    copyfile(path_r, path_w)
-
-    else:  # path_1是文件
-        with open(path_1, 'rb') as rstream:  # 是文件直接复制文件
-            container = rstream.read()
-            file_name = os.path.basename(path_1)
-            path_2 = os.path.join(path_2, file_name)
-            with open(path_2, 'wb') as wstream:
-                wstream.write(container)
-
-
-def removedir(dir):
-    dir = dir.replace('\\', '/')
-    if(os.path.isdir(dir)):
-        for p in os.listdir(dir):
-            removedir(os.path.join(dir, p))
-        if(os.path.exists(dir)):
-            os.rmdir(dir)
-    else:
-        if(os.path.exists(dir)):
-            os.remove(dir)
-
-
-def _duplicateCheck(db, atoms, check_range):
-    """
-    check_range: 传入db.select()中的参数，在其中进行重复检测
-    """
-    # 检测database是否为空，空则返回True
-    if len(db) == 0:
-        return False
-
-    if check_range:
-        atoms_to_be_check_list = list(
-            map(lambda x: x.toatoms(), list(db.select(check_range))))
-    else:
-        atoms_to_be_check_list = list(
-            map(lambda x: x.toatoms(), list(db.select())))
-
-    return any(len(atoms.numbers) == len(dp_atoms_each.numbers) and np.all(atoms.numbers == dp_atoms_each.numbers) and np.all(np.abs(atoms.positions - dp_atoms_each.positions) < 0.001) for dp_atoms_each in atoms_to_be_check_list)
-
-
-def _symmetryCheck_old(db, atoms, check_range=None):
-    """
-    check_range: 传入db.select()中的参数，在其中进行重复检测
-    """
-    if len(db) == 0:
-        return False
-
-    comp = SymmetryEquivalenceCheck(angle_tol=2, ltol=0.3, stol=0.5, vol_tol=0.3)
-
-    if check_range:
-        atoms_to_be_check_list = list(
-            map(lambda x: x.toatoms(), list(db.select(check_range))))
-    else:
-        atoms_to_be_check_list = list(
-            map(lambda x: x.toatoms(), list(db.select())))
-
-    return any(comp.compare(ats, atoms) for ats in atoms_to_be_check_list)
-
-
-def _ase2pymatgen(ase_stru):
-    """将ase的结构转换为pymatgen的结构"""
-    if not os.path.isdir(".temp"):
-        os.mkdir(".temp")
-    random_name = f"{random.random()}.vasp"
-    write(filename=f".temp/{random_name}", images=ase_stru, format="vasp")
-    return Structure.from_file(filename=f".temp/{random_name}")
-
-
-def _symmetryCheck(atoms_to_be_check_list, atoms):
-    """
-    atoms_to_be_check_list: 待检测的列表,pymatgen的格式
-    atoms: 被检测的结构,pymatgen的格式
-    如果atoms与atoms_to_be_check_list中的结构等价，返回True
-    """
-    if not atoms_to_be_check_list:
-        return False
-    comp = StructureMatcher()
-    return any(comp.fit(ats, atoms) for ats in atoms_to_be_check_list)
-
-
-def vaspMove(db_row, mode):
-    if os.path.exists(f"./calc_record/id_{db_row.id}_{mode}"):
-        removedir(f"./calc_record/id_{db_row.id}_{mode}")
-    copyfile("workdir", f"./calc_record/id_{db_row.id}_{mode}")
-    removedir("workdir")
-
-
 def init_data(atoms_tem, adsorb_element, adsorb_pos_list, db_path):
     """
     给定模板结构和吸附位，使用该函数找到所有的吸附结构
@@ -153,11 +45,11 @@ def init_data(atoms_tem, adsorb_element, adsorb_pos_list, db_path):
     n_strus_repeat = n_strus_total.copy()
     mydb = db.connect(db_path)
 
-    database_strus = [_ase2pymatgen(i.toatoms()) for i in mydb.select()]
+    database_strus = [ase2pymatgen(i.toatoms()) for i in mydb.select()]
 
     # 写入模板结构
-    pymatgen_atoms_temp = _ase2pymatgen(atoms_tem)
-    if not _symmetryCheck(database_strus, pymatgen_atoms_temp):
+    pymatgen_atoms_temp = ase2pymatgen(atoms_tem)
+    if not symmetryCheck(database_strus, pymatgen_atoms_temp):
         mydb.write(atoms_tem, scf=False, relaxed=False, ori_stru_id=0)
         database_strus.append(pymatgen_atoms_temp)
         n_strus += 1
@@ -172,8 +64,8 @@ def init_data(atoms_tem, adsorb_element, adsorb_pos_list, db_path):
                 atoms.append(atom)
 
             # n_adsorb如果指定，则只在吸附n_adsorb个的结构中检查
-            pymatgen_atoms = _ase2pymatgen(atoms)
-            if not _symmetryCheck(database_strus, pymatgen_atoms):
+            pymatgen_atoms = ase2pymatgen(atoms)
+            if not symmetryCheck(database_strus, pymatgen_atoms):
                 mydb.write(atoms, scf=False, relaxed=False, ori_stru_id=0)
                 database_strus.append(pymatgen_atoms)
                 n_strus += 1
@@ -188,18 +80,6 @@ def init_data(atoms_tem, adsorb_element, adsorb_pos_list, db_path):
     logging.info("--------------- 结束初始化数据库 ---------------\n")
 
 
-def rmscf(db_path, id):
-    """
-    删除init结构的scf标签，删除标签后不会抹除上一次计算的能量力等信息，但是之后允许对该结构进行新的计算，在view_scf_stru也不会对该结构进行展示
-    """
-    logging.info("--------------- remove scf result ---------------")
-    mydb = db.connect(db_path)
-    row = mydb.get(id=id)
-    if row.scf:
-        mydb.update(id=id, scf=False)
-        logging.info("成功删除scf结果\n")
-    else:
-        logging.info("该id没有进行scf计算\n")
 
 
 def rmrelax(db_path, id, rmrange="all"):
@@ -253,75 +133,6 @@ def rmrelax(db_path, id, rmrange="all"):
     mydb.update(id=pre_ori_id, relax_target_id=-1)
 
 
-def scf(calc, db_path, num_list, adsorb_info={"H": 1}):
-    """
-    adsorb_kind: 如果吸附的是CO2，则 adsorb_kind = {"C":1, "O":2}
-    num_list: 指定进行自洽计算地结构个数，列表索引的第一个是不吸附的结构的选取数量，第二个是吸附一个group的结构的选取数量，以此类推。
-    """
-    database = db.connect(db_path)
-    if isinstance(calc, Vasp):
-        # 将vasp计算的结果扔进calc_record保存，所以首先要创建这个文件夹
-        if not (os.path.exists("calc_record") and os.path.isdir("calc_record")):
-            os.mkdir("calc_record")
-        calc.directory = ("workdir")
-    logging.info("--------------- 开始批量 scf ---------------")
-    logging.info(
-        f"0,1,2,3...个吸附物结构的scf数量: {str(num_list).strip('[]')}, 一共需要计算{sum(num_list)}个结构")
-    n_clacs = 0
-
-    for ad_num, str_num in enumerate(num_list):
-
-        if str_num == 0:
-            continue
-
-        logging.info(f">>> 开始对吸附了{ad_num}个的结构进行scf <<<")
-
-        adsorb_kinds = adsorb_info.keys()  # ["H", ...]
-        adsorb_info_str = ",".join(
-            map(lambda x: f"{x}={ad_num*adsorb_info[x]}", adsorb_kinds))  # "C=1,O=2"
-        # ori_stru_id=0 是选取init中的结构
-        row_list = list(database.select(
-            f"scf=False, ori_stru_id=0, {adsorb_info_str}"))
-
-        if len(row_list) < str_num:
-            str_num_old = str_num
-            str_num = len(row_list)
-            logging.info(
-                f">>> 需要计算的结构有{str_num_old}个，但是数据库中最多只能选择{str_num}个 <<<")
-
-        # 选取str_num个结构进行scf
-        for row_groups in it.combinations(row_list, str_num):
-            for row in row_groups:
-                atoms = row.toatoms()
-                atoms.calc = calc
-                logging.info(f"开始进行第{n_clacs+1}个结构的计算, 该结构的id={row.id}")
-                try:
-                    atoms.get_potential_energy()
-                    if isinstance(calc, Vasp):
-                        # 计算完成后取得电子步
-                        nelm_actual = int(
-                            os.popen(r"grep -E 'Iteration[ ]+1' ./workdir/OUTCAR  | wc -l").read())
-                        # 判断收敛
-                        if nelm_actual == int(calc.parameters["nelm"]):
-                            database.update(
-                                id=row.id, atoms=atoms, scf=True, converg=False)
-                        else:
-                            database.update(
-                                id=row.id, atoms=atoms, scf=True, converg=True)
-                    else:
-                        database.update(id=row.id, atoms=atoms, scf=True, converg=True)
-                    logging.info(f"id={row.id}的结构scf成功")
-                    n_clacs += 1
-                except Exception:
-                    logging.info(f"id={row.id}的结构scf失败，请查看计算日志")
-                    time.sleep(2)
-                if isinstance(calc, Vasp):
-                    vaspMove(row, mode="scf")
-                # 更新
-            break  # 这一行一定要有，否则it.combinations会遍历所有可能的情况
-    logging.info(f"一共计算了{n_clacs}个结构")
-    logging.info("--------------- 结束批量 scf ---------------\n")
-
 
 # num_list:[2,2...] 吸附0个，1个...的结构都取两个
 def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=False, only_unconvergence=True, bfgs=True):
@@ -358,6 +169,8 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
         # ori_stru_id=0 是选取init中的结构
         row_list = list(database.select(
             f"relaxed=False, ori_stru_id=0, {adsorb_info_str}"))
+        random.shuffle(row_list)
+
         if unconvergence_selected:
             row_list_extent = list(database.select(
             f"relaxed_converg=False, {adsorb_info_str}"))
@@ -380,11 +193,11 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
 
             for dropped in rm_list:
                 row_list_extent.remove(dropped)
-
-            if only_unconvergence:
-                row_list = row_list_extent
-            else:
-                row_list.extend(row_list_extent)
+            
+            row_list_old = row_list  # 备份一下原始的候选结构
+            row_list = row_list_extent # 候选结构变更为unconvergence的结构（only_unconvergence=True则候选结构就是当前的row_list）
+            if not only_unconvergence:
+                row_list.extend(row_list_old)  # 将原始的候选结构添加到候选列表
 
         if len(row_list) < str_num:
             str_num_old = str_num
@@ -434,79 +247,6 @@ def sr(calc, db_path, num_list, adsorb_info={"H": 1}, unconvergence_selected=Fal
     logging.info(f"一共计算了{n_clacs}个结构")
     logging.info("--------------- 结束批量 relax ---------------\n")
 
-
-def scf_id(calc, db_path, id):
-    """
-    对指定id的结构进行scf计算
-    """
-    logging.info("--------------- scf for single stru ---------------")
-    if isinstance(calc, Vasp):
-        # 将vasp计算的结果扔进calc_record保存，所以首先要创建这个文件夹
-        if not (os.path.exists("calc_record") and os.path.isdir("calc_record")):
-            os.mkdir("calc_record")
-        calc.directory = ("workdir")
-
-    mydb = db.connect(db_path)
-    select = mydb.get(id=id)
-
-    # 检查init结构是否冻结
-    pre_ori_id = _get_pre_ori_id(db_path, select)
-    if _isfreeze(db_path, select):
-        logging.info(f"id={select.id}的结构的init结构(id={pre_ori_id})已经被冻结,请先解冻\n")
-        return
-
-    try:
-        bool_scf = select.scf
-        if not bool_scf:
-            logging.info(f"id={select.id}开始进行scf")
-            atoms = select.toatoms()
-            atoms.calc = calc
-            try:
-                atoms.get_potential_energy()
-                if isinstance(calc, Vasp):
-                    # 计算完成后取得电子步
-                    nelm_actual = int(
-                        os.popen(r"grep -E 'Iteration[ ]+1' ./workdir/OUTCAR  | wc -l").read())
-                    # 判断收敛
-                    if nelm_actual == int(calc.parameters["nelm"]):
-                        mydb.update(id=select.id, atoms=atoms,
-                                    scf=True, converg=False)
-                    else:
-                        mydb.update(id=select.id, atoms=atoms,
-                                    scf=True, converg=True)
-                else:
-                    mydb.update(id=select.id, atoms=atoms, scf=True, converg=True)
-                logging.info(f"id={select.id}的结构scf成功\n")
-            except Exception:
-                logging.info(f"id={select.id}的结构scf失败，请查看计算日志\n")
-            if isinstance(calc, Vasp):
-                vaspMove(select, mode="scf")
-        else:
-            logging.info("该结构已经进行过scf\n")
-    except AttributeError:  # 没有scf标签的是relax的结构，对relax的结构进行scf
-        logging.info(f"id={select.id}开始进行scf")
-        atoms = select.toatoms()
-        atoms.calc = calc
-        try:
-            atoms.get_potential_energy()
-            if isinstance(calc, Vasp):
-                # 计算完成后取得电子步
-                nelm_actual = int(
-                    os.popen(r"grep -E 'Iteration[ ]+1' ./workdir/OUTCAR  | wc -l").read())
-                # 判断收敛
-                if nelm_actual == int(calc.parameters["nelm"]):
-                    mydb.update(id=select.id, atoms=atoms,
-                                scf=True, converg=True)
-                else:
-                    mydb.update(id=select.id, atoms=atoms,
-                                scf=True, converg=False)
-            else:
-                mydb.update(id=select.id, atoms=atoms, scf=True)
-            logging.info(f"id={select.id}的结构scf成功\n")
-        except Exception:
-            logging.info(f"id={select.id}的结构scf失败，请查看计算日志\n")
-        if isinstance(calc, Vasp):
-            vaspMove(select, mode="scf")
 
 
 def sr_id(calc, db_path, id, bfgs=True):

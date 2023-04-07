@@ -37,10 +37,11 @@ def get_doped_index_groups(tem_stru, doped_element, n_doped):
     for index,stru in enumerate(tem_stru):
         if stru.species_string == doped_element:
             doped_elements_index.append(index)
+    random.shuffle(doped_elements_index)
     n_doped_total = len(doped_elements_index) # 被取代元素一共的数量
     assert n_doped_total >= n_doped # 被取代元素在晶胞中的数量一定小于等于要被取代的数量
     doped_index_groups = combinations(doped_elements_index, n_doped)
-    return list(doped_index_groups)
+    return doped_index_groups
 
 def doping(tem_stru, doping_element, doped_index):
     """获得对应的一个掺杂结构"""
@@ -88,7 +89,7 @@ def get_all_doping_strus(tem_stru, doped_element, doping_element, n_doped, n_out
     assert n_out > 0
     doped_index_groups =  get_doped_index_groups(tem_stru, doped_element, n_doped)
     #print(doped_index_groups)
-    random.shuffle(doped_index_groups)  # 打乱列表
+    #random.shuffle(doped_index_groups)  # 打乱列表
     
     old_strus_list = get_old_sturs_path(old_strus_dir_name)
     existed_strus_list = list(map(lambda x:Sr.from_file(x),old_strus_list)) # 转换成 pymatgen 结构
@@ -104,6 +105,7 @@ def get_all_doping_strus(tem_stru, doped_element, doping_element, n_doped, n_out
         if not duplicated_check(stru_doped,existed_strus_list+strus_doped_list):
             n += 1
             logging.info("\t\t\t\t\t... This is the required structure ...")
+            logging.info(f"\t\t\t\t\t... the index(from 0) respectively are {doped_index} ...")
             strus_doped_list.append(stru_doped)
             stru_doped.to(filename=f"{prefix}_{n_doped}{doping_element}_no.{n+index_start-1}.vasp",fmt="POSCAR")
             if n>=n_out:
@@ -126,11 +128,11 @@ if __name__ == "__main__":
     doped_element = "N"
     doping_element = "P"
     # 取代的数量
-    n_doped = 4
+    n_doped = 8
     # 输出结构的数量
-    n_out = 19
+    n_out = 100
     # 输出结构的索引从数字几开始
-    index_start=32
+    index_start=1
     # 输出结构的前缀
     prefix="BPN_30GPa_3x1x2"
     # 读取模板结构-ase,pymatgen
