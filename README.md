@@ -218,7 +218,6 @@ old_strus/a/b.vasp
 old_strus/b/a.vasp
 old_strus/b/b.vasp
 <<<
- 
 
 - 环境：python, 需要安装numpy,ase,pymatgen   
 ``` shell
@@ -228,7 +227,18 @@ pip3 install pymatgen
 ```
 
 使用方法：
-与general_fun放在同一个文件夹下，直接运行该文件
+与general_fun放在同一个文件夹下，直接运行该文件  
+---
+
+14. CalcEnergyDensity.py 
+- 描述：计算一个结构的能量密度，需要给定所有基态反应物单质的能量（平均到单个原子上），修改energy_reaction参数。比如如果要计算C3N4的含能量，C基态结构的能量为-3eV/atom, N的基态能量为-5eV/atom，则energy_reaction={"C":-3, "N":-5}，其他变量不需要修改
+- 环境：python, 需要安装pymatgen   
+``` shell
+pip3 install pymatgen
+```
+
+使用方法：
+和POCAR和OSZICAR在同一个文件夹下，然后直接运行该文件
 ---
 
 ## 结构变换脚本
