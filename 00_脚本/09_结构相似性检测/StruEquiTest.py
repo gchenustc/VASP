@@ -26,7 +26,7 @@ def symmetryCheck(atoms1, atoms2):
     atoms2 = _ase2pymatgen(read(atoms2))
     
     # primitive_cell=True： 可以比较不同原子数的两个结构；scale：是否缩放到同一体积，高精度下关闭此项
-    comp = StructureMatcher(ltol=1, stol=1, angle_tol=2, primitive_cell=True, scale=False)
+    comp = StructureMatcher(ltol=0.1, stol=0.1, angle_tol=1, primitive_cell=True, scale=False)
     return comp.fit(atoms1, atoms2)
 
 parser = argparse.ArgumentParser(description="None")
