@@ -225,7 +225,7 @@ pip3 install numpy
 pip3 install ase
 pip3 install pymatgen
 ```
-使用方法： 
+用法： 
 与general_fun放在同一个文件夹下，直接运行该文件  
 ---
 
@@ -235,16 +235,11 @@ pip3 install pymatgen
 ``` shell
 pip3 install pymatgen
 ```
-使用方法：
+用法：
 和POCAR和OSZICAR在同一个文件夹下，然后直接运行该文件
 ---
 
-15. Calypso_sta.py & Magus_sta.py  
-描述：请看脚本注释
-
----
-
-12. PosEquiText.py  
+15. PosEquiText.py  
 - 描述：检测POSCAR结构中的两个原子位点否为等价     
 - 环境：python, 需要安装numpy,ase,pymatgen  
 ``` shell
@@ -256,6 +251,10 @@ pip3 install pymatgen
 ``` shell
 python *.py  # 需要在脚本内部设定参数 1. vasp结构文件名，2. 指定检测的某种元素类别
 ```
+---
+
+16. Calypso_sta.py & Magus_sta.py  
+- 描述：请看脚本注释
 ---
 
 ## 结构变换脚本
