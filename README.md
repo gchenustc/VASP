@@ -254,6 +254,7 @@ python *.py  # 需要在脚本内部设定参数 1. vasp结构文件名，2. 指
 ---
 
 16. Calypso_sta.py & Magus_sta.py  
+[! 目前有bug弃用]  
 - 描述：请看脚本注释
 ---
 
