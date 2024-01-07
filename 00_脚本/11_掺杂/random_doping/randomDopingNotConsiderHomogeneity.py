@@ -1,5 +1,5 @@
 from pymatgen.core import  Structure as Sr
-import general_fun as gf 
+import generalFun as gf 
 from ase.io import write,read
 from itertools import combinations
 import os
@@ -10,7 +10,8 @@ import logging
 """
 简介
 随机掺杂，需要提供模板结构，并更改 “tem_stru_path” 这个变量为结构文件名，其他参数请看末尾
-在“old_strus_dir_name”中的子文件夹中的结构为排除的结构，脚本生成的结构会排除与其等价的结构。可以不提供该文件夹，但此变量必须存在
+在“old_strus_dir_name”中的子文件夹中的结构为排除的结构，脚本生成的结构会排除与其等价的结构。可以不提供该文件夹，但此变量必须存在。
+修改版增加了随机（掺杂完全随机）和均匀度的限制
 比如old_strus_dir_name=old_strus
 ```shell
 tree old_strus
@@ -31,17 +32,14 @@ python doping.py
 logging.basicConfig(level=logging.INFO, filename="log.txt", filemode="a",
                             format='%(asctime)s - %(filename)s[line:%(lineno)d] - %(levelname)s: %(message)s')
 
-def get_doped_index_groups(tem_stru, doped_element, n_doped):
-    """返回掺杂原子在tem_stru中的结构索引，例如 n_doped=3, 返回值为[(3,12,34),(1,63,1)...]，列表里的每一个元组都是一种掺杂可能性"""
+def get_doped_elements_index(tem_stru, doped_element):
+    """给定被取代元素，返回被取代元素在结构中的index"""
     doped_elements_index = [] # 被取代元素所在的index
     for index,stru in enumerate(tem_stru):
         if stru.species_string == doped_element:
             doped_elements_index.append(index)
-    random.shuffle(doped_elements_index)
-    n_doped_total = len(doped_elements_index) # 被取代元素一共的数量
-    assert n_doped_total >= n_doped # 被取代元素在晶胞中的数量一定小于等于要被取代的数量
-    doped_index_groups = combinations(doped_elements_index, n_doped)
-    return doped_index_groups
+    return doped_elements_index
+
 
 def doping(tem_stru, doping_element, doped_index):
     """获得对应的一个掺杂结构"""
@@ -61,6 +59,7 @@ def duplicated_check(stru, strus_list):
             return True
     return False
     #return np.any(list(map(lambda x: gf.symmetryCheck(x,stru) ,strus_list)))
+
     
 def get_old_sturs_path(old_strus_dir_name):
     """输出的结构不会与old_strus_dir_name文件夹中的一级子文件夹中的结构等价，获得old_strus_dir_name中的一级子文件夹内的结构路径，返回一个列表"""
@@ -75,6 +74,7 @@ def get_old_sturs_path(old_strus_dir_name):
             old_strus_list.append(os.path.join(dir_,file))
     return old_strus_list
 
+
 def get_all_doping_strus(tem_stru, doped_element, doping_element, n_doped, n_out, index_start, prefix, old_strus_dir_name):
     """
     获得所有掺杂结构，会剔除等价结构和old_strus_dir_name中的结构
@@ -85,11 +85,13 @@ def get_all_doping_strus(tem_stru, doped_element, doping_element, n_doped, n_out
     index_start：输出结构的文件名开始的索引号
     prefix：输出结构的文件名的前缀
     old_strus_dir_name：输出的结构不会与old_strus_dir_name文件夹中的结构等价，只识别该文件夹内的一级子文件夹
+    ration: 判断均匀性的判据
     """
+
     assert n_out > 0
-    doped_index_groups =  get_doped_index_groups(tem_stru, doped_element, n_doped)
-    #print(doped_index_groups)
-    #random.shuffle(doped_index_groups)  # 打乱列表
+    doped_elements_index = get_doped_elements_index(tem_stru, doped_element)
+    
+    assert len(doped_elements_index) >= n_doped
     
     old_strus_list = get_old_sturs_path(old_strus_dir_name)
     existed_strus_list = list(map(lambda x:Sr.from_file(x),old_strus_list)) # 转换成 pymatgen 结构
@@ -98,7 +100,11 @@ def get_all_doping_strus(tem_stru, doped_element, doping_element, n_doped, n_out
     strus_doped_list = []
     n = 0   # n是需要的结构的数量
     n_total = 0  # n_total是检测的结构的总量
-    for doped_index in doped_index_groups:
+    while True:
+        random.shuffle(doped_elements_index)
+        for i in combinations(doped_elements_index, n_doped):
+            doped_index=i
+            break
         n_total += 1 
         logging.info(f"checking no.{n_total} stru.")
         stru_doped = doping(tem_stru_pymatgen, doping_element, doped_index)
@@ -113,28 +119,26 @@ def get_all_doping_strus(tem_stru, doped_element, doping_element, n_doped, n_out
         else:
             logging.info("\t\t\t\t\t... repeated ...")
     return strus_doped_list
-    
-
 
 if __name__ == "__main__":
     # 开始时间
     starttime = time.time()
 
     # 已创建的结构的目录（新创建的结构不包含该目录的结构或者等价的结构）
-    old_strus_dir_name = "old_strus"
+    old_strus_dir_name = "strus_for_comparison"
     # 模板结构的名称
-    tem_stru_path = "BPN_30GPa_3x1x2.vasp" 
+    tem_stru_path = "BPN_30GPa_1x1x5.vasp" 
     # 被掺杂元素和掺杂元素
     doped_element = "N"
     doping_element = "P"
     # 取代的数量
-    n_doped = 8
+    n_doped = 4
     # 输出结构的数量
-    n_out = 100
+    n_out = 50
     # 输出结构的索引从数字几开始
     index_start=1
     # 输出结构的前缀
-    prefix="BPN_30GPa_3x1x2"
+    prefix="BPN_30GPa_1x1x5"
     # 读取模板结构-ase,pymatgen
     tem_stru_ase = read(tem_stru_path)
     tem_stru_pymatgen = Sr.from_file(tem_stru_path)
@@ -146,3 +150,6 @@ if __name__ == "__main__":
     runtime = endtime-starttime
     logging.info("\nEnd of calculation.")
     logging.info("Program was running for %.2f seconds." % runtime)
+
+    
+

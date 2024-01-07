@@ -1,5 +1,5 @@
 from pymatgen.core import  Structure as Sr
-import general_fun as gf 
+import generalFun as gf 
 from ase.io import write,read
 from itertools import combinations
 import os
@@ -10,7 +10,8 @@ import logging
 """
 简介
 随机掺杂，需要提供模板结构，并更改 “tem_stru_path” 这个变量为结构文件名，其他参数请看末尾
-在“old_strus_dir_name”中的子文件夹中的结构为排除的结构，脚本生成的结构会排除与其等价的结构。可以不提供该文件夹，但此变量必须存在
+在“old_strus_dir_name”中的子文件夹中的结构为排除的结构，脚本生成的结构会排除与其等价的结构。可以不提供该文件夹，但此变量必须存在。
+修改版增加了随机（掺杂完全随机）和均匀度的限制
 比如old_strus_dir_name=old_strus
 ```shell
 tree old_strus

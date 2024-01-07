@@ -1,7 +1,7 @@
 #!/bin/env bash
-#Description: After completing the tasks for calculating phonon, then use this script. the script accepts many parameters which are names of folders, the programmers will enter designated folders and execute the process of post-processing.
-#Author: gchen
-#Time: 2023-11-21 19:34
+# Description: After completing the tasks for calculating phonon, then use this script. the script accepts many parameters which are names of folders, the programmers will enter designated folders and execute the process of post-processing. needs to install the phonopy and vaspkit.
+# Author: gchen
+# Time: 2023-11-21 19:34
 
 for i in "$@"
 do
