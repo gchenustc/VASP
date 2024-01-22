@@ -7,9 +7,7 @@
 echo "time: $(date)" > enthalpy.txt
 for folder in "$@"; do
     if [ -d "${folder}" ]; then
-        cd "${folder}"
-        echo $(awk -F" " -v label="${folder}" 'BEGIN{OFS="\t"};{if($4=="E0="){print label,$5}}' OSZICAR | tail -1) >> ../enthalpy.txt
-        cd ..
+        echo $(awk -F" " -v label="${folder}" 'BEGIN{OFS="\t"};{if($4=="E0="){print label,$5}}' ${folder}/OSZICAR | tail -1) >> enthalpy.txt
     fi
 done
 

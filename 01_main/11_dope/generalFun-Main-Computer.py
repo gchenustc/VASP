@@ -2,11 +2,8 @@ import os
 from ase.io import read,write
 from pymatgen.core import Structure
 from ase.io import write,read
-import numpy as np
-import pymatgen.core as mg
-from ase.utils.structure_comparator import SymmetryEquivalenceCheck
 from pymatgen.analysis.structure_matcher import StructureMatcher
-
+import random
 
 
 def _ase2pymatgen(ase_stru):
