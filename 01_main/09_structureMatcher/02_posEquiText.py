@@ -1,9 +1,10 @@
 """
-Author: gchen
-Date: 2023.9.8
 Desc: This script detect atomic site equivalence. Run this file directly from the command line.
 Modify the POSCAR filename and specify the element which to be checked.
+Author: gchen
+Time: 2023.9.8
 """
+
 from ase.io import write, read
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure

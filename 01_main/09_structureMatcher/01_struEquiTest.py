@@ -1,3 +1,9 @@
+"""
+Description: This script detects whether multiple structures are equivalent.
+Usage: python *.py POSCAR1 POSCAR2 POSCAR3 # POSCAR* are the paths to the structure files
+Author: gchen
+"""
+
 from ase.io import write, read
 from pymatgen.analysis.structure_matcher import StructureMatcher
 from pymatgen.core import Structure
@@ -5,16 +11,6 @@ import os
 import argparse
 from itertools import combinations
 
-"""
-Description: 
-    This script detects whether multiple structures are equivalent.
-
-Usage:
-    python *.py POSCAR1 POSCAR2 POSCAR3 # POSCAR* are the paths to the structure files
-    
-Author:
-    gchen
-"""
 
 def _ase2pymatgen(ase_stru):
     """
