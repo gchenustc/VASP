@@ -90,3 +90,13 @@ This script detect atomic site equivalence.
 ### 01_main/11_dope
 #### 01_main/11_dope/dope.py
 The provided code is a program that generates doped structures based on a template structure. It replaces specified elements in the template structure with a doping element to create new structures. The program ensures that the generated structures are not duplicated with previously generated structures or existing structures in a given directory.
+
+---
+### 01_main/12_energyDensity
+#### 01_main/12_calcEnergyDensity.py
+Calculate the energy density of the energetic materials.
+
+---
+### 01_main/13_genSlabVacuumRandomGas
+### 01_main/13_genSlabVacuumRandomGas/genSlabVacuumRandomGas.py
+Generate random gas atoms in the specified region of the slab structure

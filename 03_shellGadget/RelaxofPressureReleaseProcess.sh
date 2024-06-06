@@ -18,21 +18,26 @@ export PATH=/public/home/c1337375425/soft/vasp.5.4.4/bin/:${PATH}
 # by gradually reducing(increasing) the pressure.
 #
 # Usage:
-# 1. Place this script in the same directory as the VASP input files (INCAR(KSPACING setting is necessary), POSCAR, POTCAR).
-# 2. Modify the parameters (e.g., initial pressure, pressure step size) if needed.
-# 3. Run the script using the command: bash vasp_relax.sh
-# 4. If the task is interrupted, parameter "current" is set to the folder where the last step has been calculated and meanwhile change the initial_pressure and pressure_step. For example, "initial_pressure=160", "pressure_step=20", but task interrupted for 100, so I set the "current=120", "initial_pressure=100", and "pressure_step=20".
+# 1. Place this script in the current directory (with the current script) as the VASP input files (INCAR(KSPACING setting is necessary), POSCAR, POTCAR).
+# 2. Modify the parameters (e.g., initial pressure, pressure step size. unit: GPa). initial is the first pressure to calculate.
+# 3. Run the script using the command: sbatch vasp_relax.sh
+#
+#
+# note: If the task is interrupted, parameter "current" is set to the folder where the last step has been calculated and meanwhile change the initial_pressure and pressure_step. For example, "initial_pressure=160", "pressure_step=20", but task interrupted for 100, so I set the "current=120", "initial_pressure=100", and "pressure_step=20".
 ################################################################################
 
 ###### Set the initial pressure and pressure step size ######
-initial_pressure=160
-pressure_step=20
+initial_pressure=160  # GPa
+pressure_step=20      # GPa
+# stopped_pressure=100  # GPa  if you want to calculate from the low pressure to high pressure, uncomment this line
 ###### ----------------------------------------------- ######
 
 # current folder equals -1 means there are no any calculations now.
 # If the task is interrupted, current is set to the folder where the last step "has been calculated"
 current=-1
 for pre in $(seq ${initial_pressure} -${pressure_step} 0)
+# if you want to calculate from the low pressure to high pressure, using the following line.
+# for pre in $(seq ${initial_pressure} ${pressure_step} ${stopped_pressure})
 do
     next=${pre}
 
