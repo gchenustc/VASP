@@ -15,26 +15,41 @@ import argparse
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 import matplotlib as mpl
+from scipy.ndimage import gaussian_filter1d, median_filter
+from scipy.signal import savgol_filter 
 import time
+import statsmodels.api as sm  
 
 
 def plot():
     # Configuration
-    mpl.use('TkAgg')
-    plt.rcParams['font.sans-serif']=['Arial']
+    #mpl.use('TkAgg')
+    plt.rcParams['font.sans-serif'] = ['Arial']
     formatter = ticker.FormatStrFormatter("%.2e")
-    msd = pd.read_csv("msd.out",sep=" ",index_col="time(fs)")
+    msd = pd.read_csv("msd.out", sep=" ", index_col="time(fs)")
     # Plot figure 1
-    fig = plt.figure(dpi=60,figsize=(10,8))
+    fig = plt.figure(dpi=60, figsize=(10, 8))
     ax = fig.add_subplot(111)
-    ax.plot(msd.index,msd.iloc[:,0:4],aa=True)
-    ax.legend(msd.columns,frameon=False,loc="upper center",ncol=4)
-    _extracted_from_plot_12(ax, msd, formatter, "msd.png")
+
+    smooth_columns = msd.columns[0:7]
+    for col in smooth_columns:
+        smoothed = sm.nonparametric.lowess(msd[col].values, msd.index, frac=0.06) 
+        msd[col + '_smooth'] = smoothed[:, 1]
+        # msd[col + '_smooth'] = savgol_filter(msd[col].values, window_length=45, polyorder=2) 
+    
     # Plot figure 2
-    fig1,ax1 = plt.subplots(1,1,dpi=60,figsize=(10,8))
-    ax1.plot(msd.index,msd.iloc[:,4:],aa=True)
-    ax1.legend(msd.iloc[:,4:].columns,frameon=False,loc="upper center",ncol=len(msd.iloc[:,4:].columns))
+    ax.plot(msd.index, msd.iloc[:, 6:10], aa=True)
+    ax.legend(msd.columns, frameon=False, loc="upper center", ncol=4)
+    _extracted_from_plot_12(ax, msd, formatter, "msd.png")
+
+    # Plot figure 2
+    fig1, ax1 = plt.subplots(1, 1, dpi=60, figsize=(10, 8))
+    ax1.plot(msd.index, msd.iloc[:, 10:12], aa=True)
+    ax1.legend(msd.iloc[:, 4:].columns, frameon=False,
+               loc="upper center", ncol=len(msd.iloc[:, 4:].columns))
     _extracted_from_plot_12(ax1, msd, formatter, "msd-element.png")
+
+    msd.to_csv('msd_smoothed_data.csv', index=True)  # 替换为你想要的输出文件名
 
 
 def _extracted_from_plot_12(arg0, msd, formatter, arg3):
@@ -45,6 +60,7 @@ def _extracted_from_plot_12(arg0, msd, formatter, arg3):
     arg0.yaxis.set_major_formatter(formatter)
     plt.savefig(arg3)
     plt.close()
+
 
 def car2fra(pos_arr, const):
     """Convert Cartesian coordinates to fractional coordinates.
@@ -58,6 +74,7 @@ def car2fra(pos_arr, const):
     """
     return np.dot(pos_arr, np.linalg.inv(const))
 
+
 def fra2car(pos_arr, const):
     """Convert fractional coordinates to Cartesian coordinates.
 
@@ -68,9 +85,10 @@ def fra2car(pos_arr, const):
     Returns:
         np.ndarray: Cartesian coordinates.
     """
-    return np.dot(pos_arr,const)
- 
-def judge_period_atoms(before_pos,after_pos,cons,record):
+    return np.dot(pos_arr, const)
+
+
+def judge_period_atoms(before_pos, after_pos, cons, record):
     """Check the periodicity of atomic positions.
 
     Args:
@@ -80,12 +98,12 @@ def judge_period_atoms(before_pos,after_pos,cons,record):
         record (np.ndarray): Record of atom positions beyond the boundary.
     """
     for i in range(3):
-        pos_diff = after_pos[:,i] - before_pos[:,i]
-        record[:,i] += np.where(pos_diff < -0.5,1,0)
-        record[:,i] += np.where(pos_diff > 0.5,-1,0)
-    
-    
-def calibration_pos(pos,record):
+        pos_diff = after_pos[:, i] - before_pos[:, i]
+        record[:, i] += np.where(pos_diff < -0.5, 1, 0)
+        record[:, i] += np.where(pos_diff > 0.5, -1, 0)
+
+
+def calibration_pos(pos, record):
     """Calibrate positions based on periodic boundary conditions.
 
     Args:
@@ -95,11 +113,12 @@ def calibration_pos(pos,record):
     Returns:
         np.ndarray: Calibrated positions.
     """
-    for i in range(3): #3d
-        pos[:,i] = pos[:,i] + record[:,i]
+    for i in range(3):  # 3d
+        pos[:, i] = pos[:, i] + record[:, i]
     return pos
-    
-def calc_msd(file1,file2,demision=3,pmsd_list=None):
+
+
+def calc_msd(file1, file2, demision=3, pmsd_list=None):
     """Calculate mean square displacement (MSD).
 
 
@@ -127,39 +146,43 @@ def calc_msd(file1,file2,demision=3,pmsd_list=None):
     elif demision == 1:
         return np.square(file1-file2).mean(axis=0)
 
+
 if __name__ == "__main__":
     start_time = time.perf_counter()
 
     parser = argparse.ArgumentParser(description='give step length')
-    parser.add_argument("-p","--potim", action="store", type=float, required=True, help="give potim for incar")
+    parser.add_argument("-p", "--potim", action="store",
+                        type=float, required=True, help="give potim for incar")
     options = parser.parse_args()
 
     from ase.io.vasp import read_vasp_xdatcar
-    xdatcar = read_vasp_xdatcar("XDATCAR",index=0)
+    xdatcar = read_vasp_xdatcar("XDATCAR", index=slice(None))
     xdatcar_0 = xdatcar[0]
 
     # Atom types -- e.g., ['H', 'N']
     species = list(set(xdatcar_0.get_chemical_symbols()))
     # Number of atoms for each atom type -- e.g., [12, 192]
-    n_atoms = [len([atom for atom in xdatcar_0 if atom.symbol==specie]) for specie in species]
+    n_atoms = [len([atom for atom in xdatcar_0 if atom.symbol == specie])
+               for specie in species]
     n_atoms_total = sum(n_atoms)
     # Step length
     optim = options.potim
     # Coordinates of the first structure in Cartesian coordinates
     init_pos = xdatcar_0.get_positions()
     # Dictionary of atom information, e.g., {"N":192,"H":8}
-    atoms_info_dict={}
-    for index,specie in enumerate(species):
+    atoms_info_dict = {}
+    for index, specie in enumerate(species):
         atoms_info_dict.setdefault(specie, n_atoms[index])
 
     # Output
-    msd_list = ['time(fs)','MSD-total','MSD-x','MSD-y','MSD-z']  # Header line for MSD output file
+    msd_list = ['time(fs)', 'MSD-total', 'MSD-x', 'MSD-y',
+                'MSD-z']  # Header line for MSD output file
     msd_list.extend('MSD-'+i for i in atoms_info_dict)
     # Record the number of times atoms exceed the boundary, the y-axis corresponds to each atom, and the x-axis corresponds to the x, y, z coordinates of each atom.
-    over_boundary_record = np.zeros((n_atoms_total,3)) 
+    over_boundary_record = np.zeros((n_atoms_total, 3))
 
-    pos_bak=None # Positions in the previous step
-    for n_step,atoms in enumerate(xdatcar):
+    pos_bak = None  # Positions in the previous step
+    for n_step, atoms in enumerate(xdatcar):
         cons = atoms.cell  # Lattice constants for each step
         pos = car2fra(atoms.get_positions(), cons)
 
@@ -170,21 +193,23 @@ if __name__ == "__main__":
         pos_bak = pos.copy()
 
         # Calibrate positions
-        pos = calibration_pos(pos,over_boundary_record)
+        pos = calibration_pos(pos, over_boundary_record)
         pos_car = fra2car(pos, cons)
 
         msd_list_append = [
             (n_step + 1) * optim,
             calc_msd(pos_car, xdatcar_0.get_positions(), 3),
         ]
-        msd_list_append.extend(calc_msd(pos_car,xdatcar_0.get_positions(),1)) # Partial MSD
-        msd_list_append.extend(calc_msd(pos_car,xdatcar_0.get_positions(),3,list(atoms_info_dict.values()))) # Partial MSD
-        msd_list  = np.vstack([msd_list,msd_list_append])
+        msd_list_append.extend(
+            calc_msd(pos_car, xdatcar_0.get_positions(), 1))  # Partial MSD
+        msd_list_append.extend(calc_msd(pos_car, xdatcar_0.get_positions(), 3, list(
+            atoms_info_dict.values())))  # Partial MSD
+        msd_list = np.vstack([msd_list, msd_list_append])
 
-    np.savetxt("msd.out",msd_list,fmt="%s")
+    np.savetxt("msd.out", msd_list, fmt="%s")
     plot()  # Plotting
 
-    time_cost = time.perf_counter () - start_time
+    time_cost = time.perf_counter() - start_time
     print(
         f'---- Time used: {time.strftime("%H:%M:%S", time.gmtime(time_cost))} ----'
     )

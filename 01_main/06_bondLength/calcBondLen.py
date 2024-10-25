@@ -15,6 +15,7 @@ from ase.geometry.analysis import Analysis
 from collections import Counter
 from itertools import combinations_with_replacement
 import sys
+from ase.data import atomic_numbers,covalent_radii
 
 # param for structure's name
 stru_name = sys.argv[1]
@@ -28,18 +29,35 @@ ana = Analysis(stru_ase)
 # Get the chemical elements and their counts from the formula
 chemSymbolsList = stru_ase.get_chemical_symbols() # ["N", "N", "F", "F", ...]
 kinds = Counter(chemSymbolsList) # {'P': '1', 'N': '7'}
-
+    
 # Initialize dictionaries to store bond indices and bond values
 bonds_value = {}
+
+convalent_radiis = {}
 
 # Iterate through each pair of elements and calculate bond values
 comb = combinations_with_replacement(kinds.keys(),2)
 for group in list(comb): 
     kind1 = group[0]
     kind2 = group[1]
+    
+    # Get the radii.
+    kind1_number = atomic_numbers[kind1]
+    kind2_number = atomic_numbers[kind2]
+    kind1_radii = covalent_radii[kind1_number] * 1.06
+    kind2_radii = covalent_radii[kind2_number] * 1.06
+    convalent_radiis[f"{kind1}-{kind2}"] = kind1_radii + kind2_radii
+    
     bond_index = ana.get_bonds(kind1, kind2, unique=True)
     if bond_index[0]:  # Check if there are bonds between kind1 and kind2
         bonds_value[f"{kind1}-{kind2}"] = [bond_index[0], ana.get_values(bond_index)[0]]
+
+# Exclude the unexpected bonds. Ex: the bond lenth too long.
+for key, value in bonds_value.items():
+    for i in range(len(value[1])-1, -1, -1,):
+        if value[1][i] >= convalent_radiis[key]:
+            del value[1][i]
+            del value[0][i]
 
 # Print the bond values for each pair of elements
 for key, value in bonds_value.items():

@@ -15,7 +15,7 @@ export MKL_DEBUG_CPU_TYPE=5 #加速代码
 export MKL_CBWR=AVX2 #使cpu默认支持avx2
 export I_MPI_PIN_DOMAIN=numa #内存位置与cpu位置绑定，加速内存读取。对于内存带宽要求高的计算提速明显
 
-conda activate python2_demo
+conda activate python2-demo
 
 ulimit -s unlimited  # remove limit on stack size
 
