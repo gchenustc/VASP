@@ -1,7 +1,7 @@
 # !/bin/env bash
 #author: gchen
 #time: 20240517
-#desc: 将cp2k结构优化（只适用于不优化胞的结构优化）或者分子动力学产生的.xyz文件转换为.vasp文件，其中脚本的参数：$1 = *.inp，$2 = *.xyz，如果存在$3，则该值指的是步数，即仅仅产生用户指定步数的结构。
+#desc: This script converts .xyz files generated from CP2K structural optimization (only applicable for optimizations without cell parameter changes) or molecular dynamics (limited to NVT ensemble) into .vasp files. The parameters of the script are as follows: 1=*.inp, 2 = *.xyz. If a third parameter $3 is provided, it refers to the step number, meaning that only the structure corresponding to the user-specified step will be generated.
 
 
 # 胞的基矢

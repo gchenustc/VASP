@@ -1,4 +1,7 @@
 #!/bin/bash
+# DESC：The parameter is the .inp or .restart file, this script will give you four option (DIA, OT, GEO_RELAX, CELL_RELAX) and change directly for the specified file.
+# EX: ./script input.inp
+# ATTENTION: Ensure that Multiwfn is correctly installed and can run on the current path
 
 # Function to display error message and usage instructions
 display_error_and_exit() {

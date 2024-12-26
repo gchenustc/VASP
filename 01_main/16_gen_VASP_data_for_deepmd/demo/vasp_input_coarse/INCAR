@@ -1,0 +1,50 @@
+# 启动AIMD前，必须记得去掉POSCAR里面的零初始速度 !
+SYSTEM = dpgen_md
+ISTART = 0
+ICHARG = 2
+
+# Electronic Steps
+ENCUT = 520
+ALGO = Fast  # 混合IALGO=38和IALGO=48的算法 （Davidson and RMM-DIIS ）
+PREC = N
+EDIFF = 1e-4 # EDIFF不能降低
+LREAL = Auto # project in real space
+ISMEAR = 0
+SIGMA = 0.05
+
+# MD
+IBRION = 0 # 告诉VASP执行标准的AIMD运算
+# NPT系综
+ISIF    =  3
+MDALGO = 3
+PMASS = 1000
+LANGEVIN_GAMMA = 10
+# 步长
+POTIM = 1.0 # MD 时间步长 1.0 fs
+NSW = 200
+# 温度控制
+TEBEG = 0
+TEEND = 0
+
+#SMASS = 0 # 与Nose-Hoover算法相关，是试出来的值，NPT系综不需要
+# 为保证不同K点下控温结果能复现，指定相同的随机种子
+#RANDOM_SEED = 114514 1919 810
+# 降低对称性
+ISYM = 0
+# I/O控制
+LWAVE=.FALSE.
+LCHARG=.FALSE.
+
+# HPC Performance 
+NBLOCK  = 20 # 每隔多少step写入一次XDATCAR
+KBLOCK  = 100 # 关于PCDAT and DOSCAR的写入频率，不重要
+NPAR    = 8
+KPAR    = 4
+# KSPACING is the smallest allowed spacing between k points in units of A-1
+#KSPACING = 0.2 # The tag KSPACING determines the number of k points if the KPOINTS file is not present.
+# KGAMMA Determines whether the k points (specified by the KSPACING tag ) include (KGAMMA=.TRUE.) the {\displaystyle \Gamma }\Gamma  point.
+#KGAMMA  = False # If a KPOINTS file is present, VASP ignores the KGAMMA tag and the KSPACING tag.
+
+# 其他
+PSTRESS = 0
+IVDW = 11

@@ -4,7 +4,8 @@ import subprocess
 """
 author: gchen
 time: 20240523
-desc: 将cp2k结构优化或者分子动力学产生的.pdb文件转换为.vasp文件，需要Multiwfn（执行命令是Multiwfn）
+desc: Convert .pdb files generated from CP2K structural optimization or molecular dynamics into .vasp files, requiring Multiwfn (the command to execute is Multiwfn)
+usage: Directly run this script, no parameter.
 """
 
 with open(input("请输入要处理的文件名: "), 'r') as f:

@@ -7,6 +7,13 @@ from ase.calculators.vasp import Vasp
 import matplotlib
 import matplotlib.pyplot as plt
 from ase.dft.dos import DOS
+#from matplotlib import font_manager 
+#font_path = "/public/home/c1337375425/storage/fonts"
+#font_files = font_manager.findSystemFonts(fontpaths=font_path)
+#for file in font_files:
+#    font_manager.fontManager.addfont(file)
+#plt.rcParams['font.family'] = 'serif'
+#plt.rcParams['font.serif'] = ['Times New Roman'] + plt.rcParams['font.serif']
 """
 描述：已经用vasp计算好band和dos，利用此脚本绘图
 
@@ -17,14 +24,13 @@ from ase.dft.dos import DOS
 字体设置为Arial
 如果系统没有Arial，下载Arial.ttf字体，使用以下命令获得matplotlib字体配置目录
 >>>
-import matplotlib.pyplot as plt
+import matplotlib
 print(matplotlib.matplotlib_fname())  ---> /root/Software/anaconda3/envs/deepmd/lib/python3.10/site-packages/matplotlib/mpl-data/matplotlibrc
 <<<
 将Arial.ttf拷贝进./fonts/ttf/中
 删除缓存 rm -rf ~/.cache/matplotlib
 """
 #  --------------- 参数设置 --------------- 
-plt.rcParams["font.sans-serif"] = ['Arial']
 band_calc_dir = "11_band"  # 计算能带的文件夹
 dos_calc_dir = "12_dos"  #　计算DOS的文件夹
 emin=-6 # y轴最小值
