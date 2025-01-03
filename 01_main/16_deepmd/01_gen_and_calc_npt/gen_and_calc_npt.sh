@@ -3,11 +3,11 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=24
 #SBATCH --partition=lzicnormal
-#SBATCH --exclude=b01r4n[0208,0302],b01r3n[0304]
+#SBATCH --exclude=b01r4n[0208,0302],b01r3n[0208,0304],b01r5n[0204,0303,0402]
 
 # Author: gchen
-# Desc: It's for generate the datas for deepmd, you need to create three folder, there are vasp_input_coarse (place INCAR, POTCAR, KPOINTS in it), vasp_input_fine (place INCAR, POTCAR in it, KPOINTS write in the INCAR file), and calculated folder (place this script and poscar in it.). Then set the parameter. There are outer_tem_gap, n_outer, and n_inner following.  outer_tem_gap assigns the temperature for increase, n_outer assigns outer circle times. Positional parameter assigns the pressure. For each inner circle, program will start a coarse NPT calculation and then a fine NPT calculation. Then program will start the outer circle, For outer circle, it would increae the temperature. 
-# For example, you want to get the data for POSCAR in 20 GPa and for temperature up to 1000 K, you could set outer_tem_gap=200, n_outer=5, n_inner=5, and run this script. `Sbatch ./Script.py 20`.
+# Desc: It's for generate the datas for deepmd, you need to create three folder, there are vasp_input_coarse (place INCAR, POTCAR, KPOINTS in it), vasp_input_fine (place INCAR, POTCAR in it, KPOINTS write in the INCAR file), and calculated folder (place this script and poscar in it.). Then set the parameter. There are init_tem, outer_tem_gap, n_outer, and n_inner following.  outer_tem_gap assigns the temperature for increase, n_outer assigns outer circle times. Positional parameter assigns the pressure. For each inner circle, program will start a coarse NPT calculation and then a fine NPT calculation. Then program will start the outer circle, For outer circle, it would increae the temperature. 
+# For example, you want to get the data for POSCAR in 20 GPa and for temperature up to 1000 K, you could set init_tem=200, outer_tem_gap=200, n_outer=5, n_inner=5, and run this script. `Sbatch ./Script.py 20`.
 
 # load the environment
 module purge
@@ -19,15 +19,13 @@ ulimit -s unlimited
 
 # ===== set =====
 pressure=$1
+init_tem=3000
 outer_tem_gap=200
-n_outer=5    # n_outer plus outer_tem_gap equals the maximum temperature 
+n_outer=10    # n_outer plus outer_tem_gap equals the maximum temperature 
 n_inner=5
 
-log_name="out.log-1"
+log_name="out.log"
 # ===== set =====
-
-n_outer=$((n_outer + 1))
-n_inner=$((n_inner + 1))
 
 echo "+---------------------------------+" >> ${log_name}
 echo `date` > ${log_name}
@@ -45,18 +43,20 @@ path_fine="" # 初始化
 
 # 进行不同温度下的计算
 # 外循环循环温度
-for((i=1;i<${n_outer};i++)); do
-    tem=$(( i * outer_tem_gap ))
+for((i=0;i<${n_outer};i++)); do
+    tem=$(( init_tem + i * outer_tem_gap ))
     echo "+---------------------------------+" >> ${log_name}
     echo "current temperature: ${tem}" >> ${log_name}
+	echo "Time: $(date +"%Y-%m-%d %H:%M:%S")" >> ${log_name}
     echo "+---------------------------------+" >> ${log_name}
 
     mkdir ./fine_results/${tem}
     mkdir ./coarse_results/${tem}
 
     # 内循环 - 分别进行一次粗优化和一次精优化
-    for((j=1;j<${n_inner};j++)); do
+    for((j=0;j<${n_inner};j++)); do
         echo "current iter: ${j}" >> ${log_name}
+		echo "Time: $(date +"%Y-%m-%d %H:%M:%S")" >> ${log_name}
         path_coarse_old=${path_coarse}
         path_fine_old=${path_fine}
         path_coarse="./coarse_results/${tem}/${j}"
@@ -70,7 +70,7 @@ for((i=1;i<${n_outer};i++)); do
         cp ../vasp_input_coarse/POTCAR ${path_coarse}/
         cp ../vasp_input_coarse/KPOINTS ${path_coarse}/
         
-        if [ ${i} -eq 1 ] && [ ${j} -eq 1 ];then
+        if [ ${i} -eq 0 ] && [ ${j} -eq 0 ];then
             cp ./POSCAR ${path_coarse}/
             echo 1
         else
