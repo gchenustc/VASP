@@ -35,9 +35,18 @@ def gen_per_stru(idx=0):
     for i in range(3):
         for j in range(3):
             lattice[i][j] = lattice[i][j] * (1 + pert_cell * np.random.uniform(-1, 1))
-
+    
+    # 在设置胞之前获得原子的分数坐标:
+    positions=[]
+    for i in range(len(atoms)):
+        positions.append(atoms[i].scaled_position)
+    
+    # set the lattice
     atoms.set_cell(lattice)
     #print(atoms.get_cell())
+    
+    # set the positions
+    atoms.set_scaled_positions(positions)
 
     # change the atom position
     for i in range(len(atoms)):

@@ -27,16 +27,16 @@ export PATH=/public/home/c1337375425/soft/vasp.5.4.4/bin/:${PATH}
 ################################################################################
 
 ###### Set the initial pressure and pressure step size ######
-initial_pressure=160  # GPa
-pressure_step=20      # GPa
-# stopped_pressure=100  # GPa  if you want to calculate from the low pressure to high pressure, uncomment this line
+initial_pressure=160  # GPa**
+pressure_step=20      # GPa**
+# stopped_pressure=100  # GPa  if you want to calculate from the low pressure to high pressure, uncomment this line**
 ###### ----------------------------------------------- ######
 
 # current folder equals -1 means there are no any calculations now.
 # If the task is interrupted, current is set to the folder where the last step "has been calculated"
 current=-1
 for pre in $(seq ${initial_pressure} -${pressure_step} 0)
-# if you want to calculate from the low pressure to high pressure, using the following line.
+# if you want to calculate from the low pressure to high pressure, using the following line**.
 # for pre in $(seq ${initial_pressure} ${pressure_step} ${stopped_pressure})
 do
     next=${pre}
@@ -57,7 +57,7 @@ do
     cd ./${next}
 
     # Replace the PSTRESS value in the INCAR file with the current pressure
-    sed -i 's/PSTRESS=.*/PSTRESS='${next}'0/' INCAR
+    sed -i 's/PSTRESS.*/PSTRESS = '${next}'0/' INCAR
     
     srun vasp_std
     

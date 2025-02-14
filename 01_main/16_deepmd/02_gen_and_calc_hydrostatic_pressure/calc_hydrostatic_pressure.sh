@@ -18,7 +18,7 @@ ulimit -s unlimited
 # Desc: To generate hydrostatic pressure structures (an accompanied python file is needed, and in the same folder with this script), and calculate the structures. the first position parameter is the scale factor (eg. sbatch *.sh -0.05 means reduce 5% of specified direction, details setting sees the python file). The template POSCAR, POTCAR, INCAR file is needed in the up one level folder. 
 
 # ---------- setting -----------
-n=50   # 循环个数
+n=20   # 循环个数
 log_name="out.log"
 # -------------------------------
 
@@ -50,7 +50,7 @@ do
 
   # 产生结构
   echo "Now create structures." >> ${log_name}
-  python gen_hydrostatic_pressure_strus.py $1
+  python gen_hydrostatic_pressure.py $1
 
   # 创建输入文件
   cp POSCAR ./${i}
