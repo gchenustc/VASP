@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 
 # 根据MD模拟确定一些参数
 
-dt = 0.001  # 积分步长，单位为 ps
-T = 300  # 单位为 K
-a = 30.4219 # 晶格常数，单位为 A
+dt = 0.001  # 积分步长，单位为 ps **
+T = 300  # 单位为 K **
+a = 1 # 晶格常数，单位为 A **
 
-font_size = 12 # 设置字体大小
 
 ##############################
 
 # 常量
-kB = 8.617e-5  # 玻尔兹曼常数，单位为 eV/K
-V = (4 * a) ** 3  # 体积
+font_size = 12 # 设置字体大小
+kB = 8.625e-5  # 玻尔兹曼常数，单位为 eV/K
+V = a ** 3  # 体积
 
 ##############################
 
@@ -40,7 +40,7 @@ Ns = data['TimeDelta'].iloc[2] - data['TimeDelta'].iloc[1]  # 取样间隔
 print(f"Ns (the sample interval): {Ns}")
 
 # 计算缩放系数
-scale = 1.6e+3 / ((kB * T * T * V) * (Ns * dt))  # 转换因子
+scale = (1.6e+3 / (kB * T * T * V)) * (Ns * dt)  # 转换因子
 
 # 创建hac数组并移除每Nc+1行的第一个元素
 hac = data.values

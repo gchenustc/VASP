@@ -155,6 +155,8 @@ if __name__ == "__main__":
                         type=float, required=True, help="give potim for incar")
     options = parser.parse_args()
 
+    #from ase.io.proteindatabank import read_proteindatabank
+    #xdatcar = read_proteindatabank("input-pos-1.pdb", index=slice(None))
     from ase.io.vasp import read_vasp_xdatcar
     xdatcar = read_vasp_xdatcar("XDATCAR", index=slice(None))
     xdatcar_0 = xdatcar[0]

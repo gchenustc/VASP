@@ -16,8 +16,8 @@ ratio = [2,1]
 energy = [1*CO的能量, 1*O2的能量] # 要和ground_state_input对应
 """
 #Fibrous_P_0GPa=-5.54817
-#N_alpha_0GPa=-8.37770
-#N_epsilon_0GPa=-8.37539
+#N_alpha_0GPa=
+#N_epsilon_0GPa=
 #Si_0GPa=-5.424965
 
 ground_state_input = [{"P" : 3, "N": 5},{"N": 2}] # 基态各个元素的数量  ZrN6 --> Zr + 3N2
